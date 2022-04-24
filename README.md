@@ -25,7 +25,7 @@
 [![MIT license](https://img.shields.io/badge/License-MIT-blue?style=flat)](https://github.com/TroJanzHEX/Streams-Extractor/blob/main/COPYING)  [![Open Source](https://badges.frapsoft.com/os/v2/open-source.svg?v=103)](https://github.com/TroJanzHEX/Streams-Extractor)
 
 
-#### This Bot can extract audios and subtitles from video files.
+#### This Bot can hhhn extract audios and subtitles from video files.
 #### Send any valid video file and the bot shows you available streams in it that can be extracted!!
 
 ## Any bugs or errors or suggestions, report at [TroJanzSupport](https://telegram.dog/TroJanzSupport)

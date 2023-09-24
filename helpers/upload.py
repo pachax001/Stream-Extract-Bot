@@ -91,7 +91,7 @@ async def upload_subtitle(client, message, file_loc):
         await client.send_document(
             chat_id=message.chat.id,
             document=file_loc,
-            caption="**IU Bots**",
+            caption="StreamExtract Bot",
             progress=progress_func,
             progress_args=(
                 "**Uploading extracted subtitle...**",

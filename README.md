@@ -42,4 +42,6 @@ sudo docker system prune
 
 * LOG_CHANNEL   - Create a new channel and add the id of the channel
 
+* BOT_USERNAME  - Username of the bot. Do not put @ before the username. Only add the name.
+
 

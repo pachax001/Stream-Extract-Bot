@@ -35,7 +35,7 @@
 
 
 ### Deploy in your vps
-# We are gonna use docker compose to run the bot.
+#### We are gonna use docker compose to run the bot.
 Install docker on your VPS. See official [Docker Docs.](https://docs.docker.com/engine/install/ubuntu/)
 After installing follow the below steps.
 ```sh

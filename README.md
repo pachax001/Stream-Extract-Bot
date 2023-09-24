@@ -15,7 +15,7 @@ Install docker on your VPS. See official [Docker Docs.](https://docs.docker.com/
 git clone https://github.com/pachax001/Stream-Extract-Bot.git streamextract/ && cd streamextract
 ```
 2.Fill the variables in [config.py](https://github.com/pachax001/Stream-Extract-Bot/blob/main/config.py)
-
+[Click here](https://github.com/pachax001/Stream-Extract-Bot/blob/main/README.md#configs) for more info on config.
 
 ## Configs
 

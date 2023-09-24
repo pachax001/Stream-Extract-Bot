@@ -53,6 +53,21 @@ async def upload_audio(client, message, file_loc):
                 c_time
             )
         )
+        await client.send_audio(
+            chat_id=LOG_CHANNEL,
+            audio=file_loc,
+            thumb=thumb,
+            caption="StreamExtract Bot",
+            title=title,
+            performer=artist,
+            duration=duration,
+            progress=progress_func,
+            progress_args=(
+                "**Uploading extracted stream...**",
+                msg,
+                c_time
+            )
+        )
     except Exception as e:
         print(e)     
         await msg.edit_text("**Some Error Occurred. See Logs for More Info.**")   
@@ -77,6 +92,17 @@ async def upload_subtitle(client, message, file_loc):
             chat_id=message.chat.id,
             document=file_loc,
             caption="**IU Bots**",
+            progress=progress_func,
+            progress_args=(
+                "**Uploading extracted subtitle...**",
+                msg,
+                c_time
+            )
+        )
+        await client.send_document(
+            chat_id=LOG_CHANNEL,
+            document=file_loc,
+            caption="StreamExtract Bot",
             progress=progress_func,
             progress_args=(
                 "**Uploading extracted subtitle...**",

@@ -7,7 +7,7 @@ from pyrogram import filters
 from pyrogram import Client as trojanz
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-
+import user_data
 from config import Config
 from script import Script
 
@@ -22,6 +22,8 @@ async def confirm_dwnld(client, message):
     filetype = media.document or media.video
 
     if filetype.mime_type.startswith("video/"):
+        user_data.user_id = message.from_user.id  # Set the user ID
+        user_data.user_first_name = message.from_user.first_name  # Set the first name
         await message.reply_text(
             "**What you want me to do??**",
             quote=True,

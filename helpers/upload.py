@@ -14,7 +14,7 @@ from helpers.progress import progress_func
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import Config
 log_channel = Config.LOG_CHANNEL
-bot_username = Config.BOT_USERRNAME
+bot_username = Config.BOT_USERNAME
 async def upload_audio(client, message, file_loc):
 
     msg = await message.edit_text(

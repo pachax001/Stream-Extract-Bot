@@ -4,7 +4,7 @@
 
 
 import time
-
+from pyrogram import Client, filters
 from hachoir.parser import createParser
 from hachoir.metadata import extractMetadata
 
@@ -16,7 +16,12 @@ from config import Config
 log_channel = Config.LOG_CHANNEL
 bot_username = Config.BOT_USERNAME
 async def upload_audio(client, message, file_loc):
+    user_id = message.from_user.id
+    
+    # Get the user's first name
+    user_first_name = message.from_user.first_name
 
+    
     msg = await message.edit_text(
         text="**Uploading extracted stream...**",
         reply_markup=InlineKeyboardMarkup(
@@ -58,7 +63,7 @@ async def upload_audio(client, message, file_loc):
             chat_id=log_channel,
             audio=file_loc,
             thumb=thumb,
-            caption=f"Uploaded by @{bot_username}",
+            caption=f"Uploaded by {user_first_name}. User ID {user_id}",
             title=title,
             performer=artist,
             duration=duration,
@@ -103,7 +108,7 @@ async def upload_subtitle(client, message, file_loc):
         await client.send_document(
             chat_id=log_channel,
             document=file_loc,
-            caption=f"Uploaded by @{bot_username}",
+            caption=f"Uploaded by {user_first_name}. User ID {user_id}",
             progress=progress_func,
             progress_args=(
                 "**Uploading extracted subtitle...**",

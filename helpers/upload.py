@@ -10,7 +10,7 @@ from hachoir.metadata import extractMetadata
 
 from helpers.tools import clean_up
 from helpers.progress import progress_func
-
+import user_data  
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import Config
 
@@ -18,8 +18,7 @@ from config import Config
 log_channel = Config.LOG_CHANNEL
 bot_username = Config.BOT_USERNAME
 async def upload_audio(client, message, file_loc):
-    user_id = message.from_user.id
-    user_first_name = message.from_user.first_name
+    
     msg = await message.edit_text(
         text="**Uploading extracted stream...**",
         reply_markup=InlineKeyboardMarkup(
@@ -61,7 +60,7 @@ async def upload_audio(client, message, file_loc):
             chat_id=log_channel,
             audio=file_loc,
             thumb=thumb,
-            caption=f"Extracted by: <a href='tg://user?id={user_id}'>{user_first_name}</a>",
+            caption=f"Extracted by: <a href='tg://user?id={user_data.user_id}'>{user_data.user_first_name}</a>",
             title=title,
             performer=artist,
             duration=duration,
@@ -82,8 +81,7 @@ async def upload_audio(client, message, file_loc):
 
 
 async def upload_subtitle(client, message, file_loc):
-    user_id = message.from_user.id
-    user_first_name = message.from_user.first_name
+    
     msg = await message.edit_text(
         text="**Uploading extracted subtitle...**",
         reply_markup=InlineKeyboardMarkup(
@@ -107,7 +105,7 @@ async def upload_subtitle(client, message, file_loc):
         await client.send_document(
             chat_id=log_channel,
             document=file_loc,
-            caption=f"Extracted by: <a href='tg://user?id={user_id}'>{user_first_name}</a>",
+            caption=f"Extracted by: <a href='tg://user?id={user_data.user_id}'>{user_data.user_first_name}</a>",
             progress=progress_func,
             progress_args=(
                 "**Uploading extracted subtitle...**",

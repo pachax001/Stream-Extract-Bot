@@ -18,9 +18,8 @@ from config import Config
 log_channel = Config.LOG_CHANNEL
 bot_username = Config.BOT_USERNAME
 async def upload_audio(client, message, file_loc):
-    
-
-    
+    user_id = message.from_user.id
+    user_first_name = message.from_user.first_name
     msg = await message.edit_text(
         text="**Uploading extracted stream...**",
         reply_markup=InlineKeyboardMarkup(
@@ -83,7 +82,8 @@ async def upload_audio(client, message, file_loc):
 
 
 async def upload_subtitle(client, message, file_loc):
-
+    user_id = message.from_user.id
+    user_first_name = message.from_user.first_name
     msg = await message.edit_text(
         text="**Uploading extracted subtitle...**",
         reply_markup=InlineKeyboardMarkup(

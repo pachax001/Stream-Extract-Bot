@@ -24,7 +24,7 @@ async def cb_handler(client, query):
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("HELP", callback_data="help_data"),
                 InlineKeyboardButton("ABOUT", callback_data="about_data")],
-            [InlineKeyboardButton("⭕️OWNER⭕️", url="https://t.me/hellohoneybuny")]
+            [InlineKeyboardButton("⭕️OWNER⭕️", url="https://t.me/gunaya001")]
         ])
 
         await query.message.edit_text(
@@ -40,7 +40,7 @@ async def cb_handler(client, query):
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("BACK", callback_data="start_data"),
                 InlineKeyboardButton("ABOUT", callback_data="about_data")],
-            [InlineKeyboardButton("⭕️ SUPPORT ⭕️", url="https://t.me/hellohoneybuny")]
+            [InlineKeyboardButton("⭕️ SUPPORT ⭕️", url="https://t.me/gunaya001")]
         ])
 
         await query.message.edit_text(
@@ -56,7 +56,7 @@ async def cb_handler(client, query):
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("BACK", callback_data="help_data"),
                 InlineKeyboardButton("START", callback_data="start_data")],
-            [InlineKeyboardButton("SOURCE CODE", url="https://t.me/hellohoneybuny")]
+            [InlineKeyboardButton("SOURCE CODE", url="https://github.com/pachax001/Stream-Extract-Bot")]
         ])
 
         await query.message.edit_text(

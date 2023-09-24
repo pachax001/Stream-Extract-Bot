@@ -12,7 +12,7 @@ from helpers.tools import clean_up
 from helpers.progress import progress_func
 
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-
+from config import Config
 
 async def upload_audio(client, message, file_loc):
 
@@ -42,7 +42,7 @@ async def upload_audio(client, message, file_loc):
             chat_id=message.chat.id,
             audio=file_loc,
             thumb=thumb,
-            caption="**IU Bots**",
+            caption="StreamExtract Bot",
             title=title,
             performer=artist,
             duration=duration,

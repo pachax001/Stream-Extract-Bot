@@ -17,14 +17,22 @@ git clone https://github.com/pachax001/Stream-Extract-Bot.git streamextract/ && 
 2.Fill the variables in [config.py](https://github.com/pachax001/Stream-Extract-Bot/blob/main/config.py)
 <br> [Click here](https://github.com/pachax001/Stream-Extract-Bot/blob/main/README.md#configs) for more info on config. </br>
 
-3. After filling and saving config.py type this command.
+3. After filling and saving config.py type this command in terminal and press enter.
  ```
 sudo docker compose up
 ```
-
+### Extra
+1. To stop docker container
+ ```
+sudo docker compose down
+```
+2. To delete stopped containers.
+```
+sudo docker system prune
+```
 ## Configs
 
-* BOT_TOKEN  - Get bot token from @BotFather
+* BOT_TOKEN     - Get bot token from @BotFather
 
 * APP_ID        - From my.telegram.org (or @UseTGXBot)
 
@@ -32,8 +40,6 @@ sudo docker compose up
 
 * AUTH_USERS    - Get from @MissRose_bot by /id command
 
-## Credits
-
-[![TroJanz](https://img.shields.io/badge/Pyrogram%20-%23F37626.svg?&style=for-the-badge&logo=telegram&logoColor=white)](https://github.com/pyrogram/pyrogram)
+* LOG_CHANNEL   - Create a new channel and add the id of the channel
 
 

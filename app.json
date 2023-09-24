@@ -28,6 +28,10 @@
             "description": "Id of users that can use the bot, from @MissRose_bot by /id command",
             "value": ""
         }
+        "LOG_CHANNEL": {
+            "description": "Id of Log channel to send extracted medias.",
+            "value": ""
+        }
     },
     "addons": [],
     "buildpacks": [

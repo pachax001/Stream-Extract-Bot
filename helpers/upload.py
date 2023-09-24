@@ -14,6 +14,7 @@ from helpers.progress import progress_func
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import Config
 log_channel = Config.LOG_CHANNEL
+bot_username = Config.BOT_USERRNAME
 async def upload_audio(client, message, file_loc):
 
     msg = await message.edit_text(
@@ -42,7 +43,7 @@ async def upload_audio(client, message, file_loc):
             chat_id=message.chat.id,
             audio=file_loc,
             thumb=thumb,
-            caption="StreamExtract Bot",
+            caption="Uploaded by @{bot_username}",
             title=title,
             performer=artist,
             duration=duration,
@@ -57,7 +58,7 @@ async def upload_audio(client, message, file_loc):
             chat_id=log_channel,
             audio=file_loc,
             thumb=thumb,
-            caption="StreamExtract Bot",
+            caption="Uploaded by @{bot_username}",
             title=title,
             performer=artist,
             duration=duration,
@@ -91,7 +92,7 @@ async def upload_subtitle(client, message, file_loc):
         await client.send_document(
             chat_id=message.chat.id,
             document=file_loc,
-            caption="StreamExtract Bot",
+            caption="Uploaded by @{bot_username}",
             progress=progress_func,
             progress_args=(
                 "**Uploading extracted subtitle...**",
@@ -102,7 +103,7 @@ async def upload_subtitle(client, message, file_loc):
         await client.send_document(
             chat_id=log_channel,
             document=file_loc,
-            caption="StreamExtract Bot",
+            caption="Uploaded by @{bot_username}",
             progress=progress_func,
             progress_args=(
                 "**Uploading extracted subtitle...**",

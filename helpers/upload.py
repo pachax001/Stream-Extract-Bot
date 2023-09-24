@@ -12,8 +12,8 @@ from helpers.tools import clean_up
 from helpers.progress import progress_func
 
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from config import Config
-log_channel = Config.LOG_CHANNEL
+from .. import config
+log_channel = config.Config.LOG_CHANNEL
 async def upload_audio(client, message, file_loc):
 
     msg = await message.edit_text(

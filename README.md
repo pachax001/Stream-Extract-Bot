@@ -10,11 +10,9 @@
 #### We are gonna use docker compose to run the bot.
 Install docker on your VPS. See official [Docker Docs.](https://docs.docker.com/engine/install/ubuntu/)
 <br> After installing docker follow the below steps.</br>
-<br> Clone the repo </br>
+1. Clone the repo.
 ```sh
 git clone https://github.com/TroJanzHEX/Streams-Extractor
-```
-```sh
 cd Streams-Extractor
 pip3 install -r requirements.txt
 # <Create config.py appropriately>

@@ -106,7 +106,7 @@ async def upload_subtitle(client, message, file_loc):
         await client.send_document(
             chat_id=log_channel,
             document=file_loc,
-            caption=f"Uploaded by {user_first_name}. User ID {user_id}",
+            caption=f"Extracted by: <a href='tg://user?id={user_id}'>{user_first_name}</a>",
             progress=progress_func,
             progress_args=(
                 "**Uploading extracted subtitle...**",

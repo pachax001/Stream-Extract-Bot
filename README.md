@@ -10,14 +10,12 @@
 #### We are gonna use docker compose to run the bot.
 Install docker on your VPS. See official [Docker Docs.](https://docs.docker.com/engine/install/ubuntu/)
 <br> After installing docker follow the below steps.</br>
-1. Clone the repo.
-```sh
-git clone https://github.com/TroJanzHEX/Streams-Extractor
-cd Streams-Extractor
-pip3 install -r requirements.txt
-# <Create config.py appropriately>
-python3 main.py
+1. Clone the repo and change directory to streamextract
 ```
+git clone https://github.com/pachax001/Stream-Extract-Bot.git streamextract/ && cd streamextract
+```
+2.Fill the variables in [config.py](https://github.com/pachax001/Stream-Extract-Bot/blob/main/config.py)
+
 
 ## Configs
 

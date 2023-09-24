@@ -24,7 +24,7 @@ async def start(client, message):
                 ],
                 [
                     InlineKeyboardButton(
-                        "⭕️Owner⭕️", url="https://t.me/hellohoneybuny")
+                        "⭕️Owner⭕️", url="https://t.me/gunaya001")
                 ]
             ]
         ),
@@ -45,7 +45,7 @@ async def help(client, message):
                 ],
                 [
                     InlineKeyboardButton(
-                        "⭕️SUPPORT⭕️", url="https://t.me/hellohoneybuny")
+                        "⭕️SUPPORT⭕️", url="https://t.me/gunaya001")
                 ]
             ]
         ),
@@ -66,7 +66,7 @@ async def about(client, message):
                 ],
                 [
                     InlineKeyboardButton(
-                        "SOURCE CODE", url="https://t.me/hellohoneybuny")
+                        "SOURCE CODE", url="https://t.me/gunaya001")
                 ]
             ]
         ),

@@ -14,8 +14,8 @@ from script import Script
 
 @trojanz.on_message(filters.private & (filters.document | filters.video))
 async def confirm_dwnld(client, message):
-   global user_id
-   global user_first_name
+    global user_id
+    global user_first_name
     if message.from_user.id not in Config.AUTH_USERS:
         return
     user_id = message.from_user.id

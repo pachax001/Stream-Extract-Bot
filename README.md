@@ -4,18 +4,17 @@
 #### This Bot can extract audios and subtitles from video files.
 #### Send any valid video file and the bot shows you available streams in it that can be extracted!!
 
-## Any bugs or errors or suggestions, report at [TroJanzSupport](https://telegram.dog/TroJanzSupport)
-
-
 ## Installation
-
 
 ### Deploy in your vps
 #### We are gonna use docker compose to run the bot.
 Install docker on your VPS. See official [Docker Docs.](https://docs.docker.com/engine/install/ubuntu/)
 <br> After installing docker follow the below steps.</br>
+<br> Clone the repo </br>
 ```sh
 git clone https://github.com/TroJanzHEX/Streams-Extractor
+```
+```sh
 cd Streams-Extractor
 pip3 install -r requirements.txt
 # <Create config.py appropriately>

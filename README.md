@@ -16,6 +16,7 @@ git clone https://github.com/pachax001/Stream-Extract-Bot.git streamextract/ && 
 ```
 2.Fill the variables in [config.py](https://github.com/pachax001/Stream-Extract-Bot/blob/main/config.py)
 <br> [Click here](https://github.com/pachax001/Stream-Extract-Bot/blob/main/README.md#configs) for more info on config. </br>
+
 [in this line](https://github.com/pachax001/Stream-Extract-Bot/blob/56bb5983b80f833ee625adb6352bfba4db357cee/main.py#L23) replace the number with your telegram id.
 
 3. After filling and saving config.py type this command in terminal and press enter.

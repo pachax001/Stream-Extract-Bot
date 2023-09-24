@@ -37,6 +37,8 @@
 ### Deploy in your vps
 
 Install docker on your VPS. See official [Docker Docs](https://docs.docker.com/engine/install/ubuntu/)
+We are gonna use docker compose to run the bot.
+After installing follow the below steps.
 ```sh
 git clone https://github.com/TroJanzHEX/Streams-Extractor
 cd Streams-Extractor

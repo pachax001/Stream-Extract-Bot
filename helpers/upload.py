@@ -16,10 +16,7 @@ from config import Config
 log_channel = Config.LOG_CHANNEL
 bot_username = Config.BOT_USERNAME
 async def upload_audio(client, message, file_loc):
-    user_id = message.from_user.id
     
-    # Get the user's first name
-    user_first_name = message.from_user.first_name
 
     
     msg = await message.edit_text(
@@ -63,7 +60,7 @@ async def upload_audio(client, message, file_loc):
             chat_id=log_channel,
             audio=file_loc,
             thumb=thumb,
-            caption=f"Uploaded by {user_first_name}. User ID {user_id}",
+            caption=f"Extracted by: <a href='tg://user?id={user_id}'>{user_first_name}</a>",
             title=title,
             performer=artist,
             duration=duration,

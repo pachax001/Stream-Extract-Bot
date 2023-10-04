@@ -42,7 +42,7 @@ sudo docker system prune
 
 * AUTH_USERS    - Get from @MissRose_bot by /id command. Put id seperated by spaces.
 
-* LOG_CHANNEL   - Create a new channel and add the id of the channel. Remember to put the log channel ID also to the AUTH_USERS.
+* LOG_CHANNEL   - Create a new channel and add the id of the channel. Remember to put the log channel ID also to the AUTH_USERS. Add the bot to the channel as admin
 
 * BOT_USERNAME  - Username of the bot. Do not put @ before the username. Only add the name.
 

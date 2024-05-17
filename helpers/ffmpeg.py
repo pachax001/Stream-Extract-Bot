@@ -35,6 +35,7 @@ async def extract_audio(client, message, data):
 
 async def extract_subtitle(client, message, data):
     file_name = data.get('file_name', 'unknown_file')
+    print(data)
     await message.edit_text(f"Extracting subtitle from {file_name}...")
 
     dwld_loc = data['location']

@@ -15,15 +15,20 @@ RUN apk --no-cache add \
     libffi-dev \
     bash
 
-# Copy requirements file and install dependencies
-COPY requirements.txt .
-RUN pip3 install --no-cache-dir -r requirements.txt
+# Create a virtual environment
+RUN python3 -m venv /usr/src/app/venv
+
+# Activate the virtual environment and install dependencies
+RUN /usr/src/app/venv/bin/pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application files
 COPY . .
 
 # Make start.sh executable
 RUN chmod +x start.sh
+
+# Ensure the virtual environment is used by default
+ENV PATH="/usr/src/app/venv/bin:$PATH"
 
 # Run the application
 CMD ["bash", "start.sh"]

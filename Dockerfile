@@ -14,11 +14,11 @@ RUN apk --no-cache add \
     python3-dev \
     libffi-dev \
     bash
-# Copy the rest of the application files
-COPY . .
+
 # Create a virtual environment
 RUN python3 -m venv /usr/src/app/venv
-
+# Copy the rest of the application files
+COPY . .
 # Activate the virtual environment and install dependencies
 RUN /usr/src/app/venv/bin/pip install --no-cache-dir -r requirements.txt
 

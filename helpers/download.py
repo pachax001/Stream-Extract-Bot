@@ -17,16 +17,17 @@ async def download_file(client, message):
     if media.empty:
         await message.reply_text('Why did you delete that?? 😕', True)
         return
-
+    filetype = media.document or media.video
+    file_name = filetype.file_name if filetype else "unknown_file"
     msg = await client.send_message(
         chat_id=message.chat.id,
-        text="**Downloading your file to server...**",
+        text=f"**Downloading {file_name} to server...**",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton(text="Check Progress", callback_data="progress_msg")]
         ]),
         reply_to_message_id=media.message_id
     )
-    filetype = media.document or media.video
+    
 
     c_time = time.time()
 
@@ -34,19 +35,19 @@ async def download_file(client, message):
         message=media,
         progress=progress_func,
         progress_args=(
-            "**Downloading your file to server...**",
+            f"**Downloading {file_name} to server...**",
             msg,
             c_time
         )
     )
 
-    await msg.edit_text("Processing your file....")
+    await msg.edit_text(f"Processing {file_name}....")
 
     output = await execute(f"ffprobe -hide_banner -show_streams -print_format json '{download_location}'")
     
     if not output:
         await clean_up(download_location)
-        await msg.edit_text("Some Error Occured while Fetching Details...")
+        await msg.edit_text(f"Some Error Occured while Fetching Details of {file_name}")
         return
 
     details = json.loads(output[0])
@@ -83,7 +84,7 @@ async def download_file(client, message):
     ])    
 
     await msg.edit_text(
-        "**Select the Stream to be Extracted...**",
+        f"**Select the Stream to be Extracted for {file_name}**",
         reply_markup=InlineKeyboardMarkup(buttons)
         )
 

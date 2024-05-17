@@ -66,7 +66,7 @@ async def download_file(client, message):
         except:
             lang = mapping
         
-        DATA[f"{message.chat.id}-{msg.message_id}"][int(mapping)] = {
+        DATA[f"{message.chat.id}-{msg.id}"][int(mapping)] = {
             "map" : mapping,
             "name" : stream_name,
             "type" : stream_type,

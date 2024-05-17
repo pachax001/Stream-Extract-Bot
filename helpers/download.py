@@ -71,7 +71,8 @@ async def download_file(client, message):
             "name" : stream_name,
             "type" : stream_type,
             "lang" : lang,
-            "location" : download_location
+            "location" : download_location,
+            "file_name" : file_name
         }
         buttons.append([
             InlineKeyboardButton(

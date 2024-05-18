@@ -9,24 +9,33 @@ import json
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from helpers.progress import progress_func
 from helpers.tools import execute, clean_up
+from helpers.logger import logger
 
 DATA = {}
 
 async def download_file(client, message):
     media = message.reply_to_message
+    user_id = message.reply_to_message.from_user.id
+    user_first_name = message.reply_to_message.from_user.first_name
     if media.empty:
         await message.reply_text('Why did you delete that?? 😕', True)
         return
     filetype = media.document or media.video
     file_name = filetype.file_name if filetype else "unknown_file"
-    msg = await client.send_message(
-        chat_id=message.chat.id,
-        text=f"**Downloading {file_name} to server...**",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton(text="Check Progress", callback_data="progress_msg")]
-        ]),
-        reply_to_message_id=media.id
-    )
+    logger.info(f"Send file to download {file_name} by {user_id} - {user_first_name}")
+    try:
+        msg = await client.send_message(
+            chat_id=message.chat.id,
+            text=f"**Downloading {file_name} to server...**",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton(text="Check Progress", callback_data="progress_msg")]
+            ]),
+            reply_to_message_id=media.id
+        )
+    except Exception as e:
+        logger.error(f"Error while sending message: {e}")
+        await message.reply_text("Some error occured. Please try again later.")
+        return
     
 
     c_time = time.time()
@@ -42,11 +51,12 @@ async def download_file(client, message):
     )
 
     await msg.edit_text(f"Processing {file_name}....")
-
-    output = await execute(f"ffprobe -hide_banner -show_streams -print_format json '{download_location}'")
-    
-    if not output:
-        await clean_up(download_location)
+    logger.info(f"Downloaded {file_name} to server. Time taken: {time.time() - c_time} seconds.")
+    try:
+        output = await execute(f"ffprobe -hide_banner -show_streams -print_format json '{download_location}'")
+    except Exception as e:
+        logger.error(f"Error while executing ffprobe: {e}")
+        await clean_up(download_location, None, file_name)
         await msg.edit_text(f"Some Error Occured while Fetching Details of {file_name}")
         return
 
@@ -72,7 +82,9 @@ async def download_file(client, message):
             "type" : stream_type,
             "lang" : lang,
             "location" : download_location,
-            "file_name" : file_name
+            "file_name" : file_name,
+            "user_id" : user_id,
+            "user_first_name" : user_first_name
         }
         buttons.append([
             InlineKeyboardButton(

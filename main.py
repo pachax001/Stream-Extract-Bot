@@ -6,7 +6,7 @@
 from pyrogram import Client
 
 from config import Config
-
+from helpers.logger import logger
 
 if __name__ == "__main__":
     plugins = dict(
@@ -18,7 +18,9 @@ if __name__ == "__main__":
         api_id=Config.APP_ID,
         api_hash=Config.API_HASH,
         plugins=plugins,
-        workers=300
+        workers=300,
+        max_concurrent_transmissions=100
     )
-    Config.AUTH_USERS.add(1940436756)
+    logger.info("Bot has started.")
     app.run()
+    

@@ -7,23 +7,25 @@ from pyrogram import filters
 from pyrogram import Client as trojanz
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-import user_data
+
 from config import Config
 from script import Script
+from helpers.logger import logger
 
 
 @trojanz.on_message(filters.private & (filters.document | filters.video))
 async def confirm_dwnld(client, message):
     
-    if message.from_user.id not in Config.AUTH_USERS:
+    if message.from_user.id not in Config.AUTH_USERS or message.from_user.id != Config.OWNER_ID:
         return
     
     media = message
     filetype = media.document or media.video
 
     if filetype.mime_type.startswith("video/"):
-        user_data.user_id = message.from_user.id  # Set the user ID
-        user_data.user_first_name = message.from_user.first_name  # Set the first name
+        user_id = message.from_user.id  # Set the user ID
+        user_first_name = message.from_user.first_name  # Set the first name
+        logger.info(f"User {user_id} - {user_first_name} requested to download a video")
         await message.reply_text(
             "**What you want me to do??**",
             quote=True,

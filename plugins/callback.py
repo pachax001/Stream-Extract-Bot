@@ -14,7 +14,7 @@ from helpers.progress import PRGRS
 from helpers.tools import clean_up
 from helpers.download import download_file, DATA
 from helpers.ffmpeg import extract_audio, extract_subtitle
-
+from helpers.logger import logger
 
 @trojanz.on_callback_query()
 async def cb_handler(client, query):
@@ -75,7 +75,7 @@ async def cb_handler(client, query):
 
     elif query.data == "progress_msg":
         try:
-            msg = "Progress Details...\n\nCompleted : {current}\nTotal Size : {total}\nSpeed : {speed}\nProgress : {progress:.2f}%\nETA: {eta}"
+            msg = "Progress Details...\n\nCompleted : {current}\nTotal Size : {total}\nSpeed : {speed}\nProgress : {progress:.2f}%\nElapsed Time : {elapsed}%\nETA: {eta}"
             await query.answer(
                 msg.format(
                     **PRGRS[f"{query.message.chat.id}_{query.message.id}"]
@@ -103,8 +103,9 @@ async def cb_handler(client, query):
             stream_type, mapping, keyword = query.data.split('_')
             data = DATA[keyword][int(mapping)]
             await extract_audio(client, query.message, data)
-        except:
-            await query.message.edit_text("**Details Not Found**")   
+        except Exception as e:
+            await query.message.edit_text("**Details Not Found**")
+            logger.error(f"Error while extracting audio: {e}")   
 
 
     elif query.data.startswith('subtitle'):
@@ -113,20 +114,22 @@ async def cb_handler(client, query):
             stream_type, mapping, keyword = query.data.split('_')
             data = DATA[keyword][int(mapping)]
             await extract_subtitle(client, query.message, data)
-        except:
-            await query.message.edit_text("**Details Not Found**")  
+        except Exception as e:
+            await query.message.edit_text("**Details Not Found**")
+            logger.error(f"Error while extracting subtitle: {e}")  
 
 
     elif query.data.startswith('cancel'):
         try:
             query_type, mapping, keyword = query.data.split('_')
             data = DATA[keyword][int(mapping)] 
-            await clean_up(data['location'])  
+            await clean_up(data['location'], None, data['file_name'])  
             await query.message.edit_text("**Cancelled...**")
             await query.answer(
                 "Cancelled...",
                 show_alert=True
             ) 
-        except:
+        except Exception as e:
             await query.answer() 
-            await query.message.edit_text("**Details Not Found**")        
+            await query.message.edit_text("**Details Not Found**") 
+            logger.error(f"Error while cancelling: {e}")       

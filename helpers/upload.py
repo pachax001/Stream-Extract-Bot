@@ -10,14 +10,14 @@ from hachoir.metadata import extractMetadata
 
 from helpers.tools import clean_up
 from helpers.progress import progress_func
-import user_data  
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import Config
+from helpers.logger import logger
 
 
 log_channel = Config.LOG_CHANNEL
 bot_username = Config.BOT_USERNAME
-async def upload_audio(client, message, file_loc):
+async def upload_audio(client, message, file_loc, username, userid):
     
     msg = await message.edit_text(
         text="**Uploading extracted stream...**",
@@ -41,6 +41,7 @@ async def upload_audio(client, message, file_loc):
     c_time = time.time()    
 
     try:
+        logger.info(f"Uploading extracted stream...")
         await client.send_audio(
             chat_id=message.chat.id,
             audio=file_loc,
@@ -56,11 +57,18 @@ async def upload_audio(client, message, file_loc):
                 c_time
             )
         )
+    except Exception as e:
+        logger.error(f"Error while uploading extracted stream: {e}")
+        await msg.edit_text("**Some Error Occurred. See Logs for More Info.**")
+        await clean_up(file_loc, None, file_loc)
+        return
+    try:
+        logger.info(f"Uploading extracted stream to log channel...")
         await client.send_audio(
             chat_id=log_channel,
             audio=file_loc,
             thumb=thumb,
-            caption=f"Extracted by: <a href='tg://user?id={user_data.user_id}'>{user_data.user_first_name}</a>",
+            caption=f"Extracted by: <a href='tg://user?id={userid}'>{username}</a>",
             title=title,
             performer=artist,
             duration=duration,
@@ -72,15 +80,16 @@ async def upload_audio(client, message, file_loc):
             )
         )
     except Exception as e:
-        print(e)     
-        await msg.edit_text("**Some Error Occurred. See Logs for More Info.**")   
+        logger.error(f"Error while uploading extracted stream to log channel: {e}")
+        await msg.edit_text("**Some Error Occurred. See Logs for More Info.**")
+        await clean_up(file_loc, None, file_loc)   
         return
 
     await msg.delete()
-    await clean_up(file_loc)    
+    await clean_up(file_loc, None, file_loc)    
 
 
-async def upload_subtitle(client, message, file_loc):
+async def upload_subtitle(client, message, file_loc,username,userid):
     
     msg = await message.edit_text(
         text="**Uploading extracted subtitle...**",
@@ -105,7 +114,7 @@ async def upload_subtitle(client, message, file_loc):
         await client.send_document(
             chat_id=log_channel,
             document=file_loc,
-            caption=f"Extracted by: <a href='tg://user?id={user_data.user_id}'>{user_data.user_first_name}</a>",
+            caption=f"Extracted by: <a href='tg://user?id={userid}'>{username}</a>",
             progress=progress_func,
             progress_args=(
                 "**Uploading extracted subtitle...**",
@@ -114,9 +123,9 @@ async def upload_subtitle(client, message, file_loc):
             )
         )
     except Exception as e:
-        print(e)     
+        logger.error(f"Error while uploading extracted subtitle: {e}")   
         await msg.edit_text("**Some Error Occurred. See Logs for More Info.**")   
         return
 
     await msg.delete()
-    await clean_up(file_loc)        
+    await clean_up(file_loc, None, file_loc)        

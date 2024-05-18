@@ -6,6 +6,7 @@ import os
 import time
 import asyncio
 
+
 PRGRS = {}
 
 async def progress_func(
@@ -32,7 +33,8 @@ async def progress_func(
             "total": humanbytes(total),
             "speed": humanbytes(speed),
             "progress": percentage,
-            "eta": elapsed_time_str
+            "elapsed": elapsed_time_str,
+            "eta": estimated_total_time_str
         }
 
 def humanbytes(size):

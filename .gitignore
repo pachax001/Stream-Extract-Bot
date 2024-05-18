@@ -9,3 +9,6 @@ config.env
 *.pickle
 log.txt
 *.session
+downloads/
+__pycache__/
+

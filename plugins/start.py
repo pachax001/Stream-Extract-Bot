@@ -72,3 +72,11 @@ async def about(client, message):
         ),
         reply_to_message_id=message.id
     )
+
+@trojanz.on_message(filters.command(["log"]) & filters.private & filters.user(Config.OWNER_ID))
+async def log(client, message):
+    try:
+        with open('log.txt', 'rb') as f:
+            await client.send_document(message.chat.id, document=f, caption="Log file")
+    except:
+        await message.reply_text("No log file found")

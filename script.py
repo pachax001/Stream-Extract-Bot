@@ -37,6 +37,6 @@ See <i>help</i> for more details.
 
 ⭕️<b>Language :</b> <code>Python3</code>
 
-⭕️<b>Library :</b> <a href='https://docs.pyrogram.org/'>Pyrogram 1.0.7</a> 
+⭕️<b>Library :</b> <a href='https://pyrofork.mayuri.my.id/main/'>Pyrofork</a> 
 
 """

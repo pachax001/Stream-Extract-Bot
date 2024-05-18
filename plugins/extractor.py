@@ -16,7 +16,7 @@ from helpers.logger import logger
 @trojanz.on_message(filters.private & (filters.document | filters.video))
 async def confirm_dwnld(client, message):
     
-    if message.from_user.id not in Config.AUTH_USERS or message.from_user.id != Config.OWNER_ID:
+    if message.from_user.id not in Config.AUTH_USERS and message.from_user.id != Config.OWNER_ID:
         return
     
     media = message

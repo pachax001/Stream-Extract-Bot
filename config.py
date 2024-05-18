@@ -2,21 +2,21 @@
 # -*- coding: utf-8 -*-
 # @trojanzhex
 
-
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv('config.env')
 
 class Config(object):
-
     # Get a bot token from botfather
     BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
-
 
     # Get from my.telegram.org (or @UseTGXBot)
     APP_ID = int(os.environ.get("APP_ID", ""))
     API_HASH = os.environ.get("API_HASH", "")
 
-
     # Array to store users who are authorized to use the bot
-    AUTH_USERS = set(int(x) for x in os.environ.get("AUTH_USERS", "").split())
+    AUTH_USERS = set(int(x) for x in os.environ.get("AUTH_USERS", "").split(','))
     LOG_CHANNEL = os.environ.get("LOG_CHANNEL", "")
     BOT_USERNAME = os.environ.get("BOT_USERNAME", "")

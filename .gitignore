@@ -1,1 +1,11 @@
 config.env
+venv/
+.vscode/
+config.env
+*.pyc
+.vscode
+.idea
+*.json
+*.pickle
+log.txt
+*.session

@@ -14,23 +14,28 @@ Install docker on your VPS. See official [Docker Docs.](https://docs.docker.com/
 ```
 git clone https://github.com/pachax001/Stream-Extract-Bot.git streamextract/ && cd streamextract
 ```
-2.Fill the variables in [config.py](https://github.com/pachax001/Stream-Extract-Bot/blob/main/config.py)
-<br> [Click here](https://github.com/pachax001/Stream-Extract-Bot/blob/main/README.md#configs) for more info on config. </br>
-
-[In this line](https://github.com/pachax001/Stream-Extract-Bot/blob/56bb5983b80f833ee625adb6352bfba4db357cee/main.py#L23) replace the number with your telegram id.
-
-3. After filling and saving config.py type this command in terminal and press enter.
+2.Rename sample_config.env to config.env and fill config.env
+```
+cp sample_config.env config.env
+```
+```
+nano config.env
+```
+3. After filling and saving config.env type this command in terminal and press enter.
  ```
 sudo docker compose up
 ```
 ### Extra
+
+Added /log command to retireve log file of the bot.
+
 1. To stop docker container
  ```
 sudo docker compose down
 ```
 2. To delete stopped containers.
 ```
-sudo docker system prune
+sudo docker system prune -a
 ```
 ## Configs
 
@@ -40,10 +45,12 @@ sudo docker system prune
 
 * API_HASH      - From my.telegram.org (or @UseTGXBot)
 
-* AUTH_USERS    - Get from @MissRose_bot by /id command. Put id seperated by spaces.
+* OWNER_ID      - Telegram ID of the owner
 
-* LOG_CHANNEL   - Create a new channel and add the id of the channel. Remember to put the log channel ID also to the AUTH_USERS. Add the bot to the channel as admin
+* AUTH_USERS    - Get from @MissRose_bot by /id command. Put id seperated by commas.
 
-* BOT_USERNAME  - Username of the bot. Do not put @ before the username. Only add the name.
+* LOG_CHANNEL   - Create a new channel and add the id of the channel. Remember to put the log channel ID also to the AUTH_USERS. Add the bot to the channel as admin.After starting the bot send a message to the log channel
+
+* BOT_USERNAME  - Username of the bot. Do not put @ before the username. Only add the name. Eg: Extractorbot
 
 

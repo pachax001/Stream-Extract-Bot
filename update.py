@@ -11,7 +11,7 @@ load_dotenv('config.env', override=True)
 
 
 UPSTREAM_REPO = getenv('UPSTREAM_REPO', "https://github.com/pachax001/Stream-Extract-Bot")
-UPSTREAM_BRANCH = getenv('UPSTREAM_BRANCH', "main")
+UPSTREAM_BRANCH = getenv('UPSTREAM_BRANCH', "debug")
 
 if UPSTREAM_REPO is not None:
     if opath.exists('.git'):

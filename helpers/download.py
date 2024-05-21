@@ -93,7 +93,7 @@ async def download_file(client, message):
     except Exception as e:
         logger.error(f"Error while downloading {file_name}: {e}")
         await msg.edit_text(f"Error while downloading {file_name}: {e}")
-        clean_up(download_location, None, file_name)
+        clean_up(download_location +".temp", None, file_name)
         return
     try:
         if LOG_MODE:

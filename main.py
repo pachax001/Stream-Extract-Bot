@@ -35,7 +35,14 @@ async def edit_restart_message():
 
 if __name__ == "__main__":
     logger.info("Starting bot...")
+
+    # Ensure an event loop is created and set as the current event loop
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    
     app.start()
-    asyncio.run(edit_restart_message())
+    
+    loop.run_until_complete(edit_restart_message())
+    
     logger.info("Bot has started.")
     app.run()

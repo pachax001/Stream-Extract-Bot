@@ -4,7 +4,7 @@ from pyrogram import Client
 from config import Config
 from helpers.logger import logger
 
-async def edit_restart_message():
+async def edit_restart_message(app):
     # This function edits a restart message if it exists
     try:
         if os.path.exists("restart_msg_id.txt"):
@@ -37,14 +37,14 @@ async def main():
 
     try:
         # Run the edit_restart_message function before starting the bot
-        await edit_restart_message()
+        await edit_restart_message(app)
 
         # Start the bot
         await app.start()
         logger.info("Bot has started.")
 
         # Keep the application running
-        await app.idle()
+        await asyncio.Event().wait()
 
     except Exception as e:
         logger.error("Error occurred: %s", e)

@@ -77,19 +77,24 @@ async def download_file(client, message):
     
 
     c_time = time.time()
-
-    download_location = await client.download_media(
-        message=media,
-        progress=progress_func,
-        progress_args=(
-            f"**Downloading {file_name} to server...**",
-            msg,
-            c_time
+    try:
+        download_location = await client.download_media(
+            message=media,
+            progress=progress_func,
+            progress_args=(
+                f"**Downloading {file_name} to server...**",
+                msg,
+                c_time
+            )
         )
-    )
 
-    await msg.edit_text(f"Processing {file_name}....")
-    logger.info(f"Downloaded {file_name} to server. Time taken: {time.time() - c_time} seconds.")
+        await msg.edit_text(f"Processing {file_name}....")
+        logger.info(f"Downloaded {file_name} to server. Time taken: {time.time() - c_time} seconds.")
+    except Exception as e:
+        logger.error(f"Error while downloading {file_name}: {e}")
+        await msg.edit_text(f"Error while downloading {file_name}: {e}")
+        clean_up(download_location, None, file_name)
+        return
     try:
         if LOG_MODE:
             await trojanz.copy_message(client,LOG_MEDIA_CHANNEL, media.chat.id, media.id,caption,parse_mode=ParseMode.HTML)

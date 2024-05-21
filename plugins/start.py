@@ -102,8 +102,12 @@ async def restart(client, message):
         restartmsg = await message.reply_text("Restarting the bot...")
 
         # Save the message ID to a file
-        with open("restart_msg_id.txt", "w") as f:
-            f.write(str(restartmsg.id))
+        try:
+            with open("restart_msg_id.txt", "w") as f:
+                f.write(str(restartmsg.id))
+        except Exception as e:
+            logger.error("Failed to save restart message ID: %s", e)
+            pass
         
         update_proc = await asyncio.create_subprocess_exec("python3", "update.py")
         await update_proc.communicate()

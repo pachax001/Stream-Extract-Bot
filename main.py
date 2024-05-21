@@ -1,19 +1,8 @@
 import os
+import asyncio
 from pyrogram import Client
-
 from config import Config
 from helpers.logger import logger
-import asyncio
-# Initialize your Pyrogram client
-app = Client(
-    "TroJanz",
-    bot_token=Config.BOT_TOKEN,
-    api_id=Config.APP_ID,
-    api_hash=Config.API_HASH,
-    plugins=dict(root="plugins"),
-    workers=300,
-    max_concurrent_transmissions=100
-)
 
 async def edit_restart_message():
     if os.path.exists("restart_msg_id.txt"):
@@ -31,8 +20,6 @@ async def edit_restart_message():
         finally:
             os.remove("restart_msg_id.txt")
 
-
-
 if __name__ == "__main__":
     logger.info("Starting bot...")
 
@@ -40,9 +27,21 @@ if __name__ == "__main__":
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     
-    app.start()
+    # Initialize your Pyrogram client
+    app = Client(
+        "TroJanz",
+        bot_token=Config.BOT_TOKEN,
+        api_id=Config.APP_ID,
+        api_hash=Config.API_HASH,
+        plugins=dict(root="plugins"),
+        workers=300,
+        max_concurrent_transmissions=100
+    )
     
+    # Run the edit_restart_message function before starting the bot
     loop.run_until_complete(edit_restart_message())
     
-    logger.info("Bot has started.")
+    # Start the bot
     app.run()
+
+    logger.info("Bot has started.")

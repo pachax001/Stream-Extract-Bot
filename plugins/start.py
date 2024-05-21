@@ -94,6 +94,7 @@ async def is_ffmpeg_running():
 
 @trojanz.on_message(filters.command(["restart"]) & filters.private & filters.user(Config.OWNER_ID))
 async def restart(client, message):
+    logger.info("Restarting the bot...")
     restartmsg = await message.reply_text("Restarting the bot...")
     try:
         with open("restart_msg_id.txt", "w") as f:

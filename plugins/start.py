@@ -96,11 +96,21 @@ async def is_ffmpeg_running():
 async def restart(client, message):
     try:
         if await is_ffmpeg_running():
-            await asyncio.create_subprocess_exec("pkill", "-9", "-f", "ffmpeg")
+            proc = await asyncio.create_subprocess_exec("pkill", "-9", "-f", "ffmpeg")
+            await proc.communicate()
+        
         restartmsg = await message.reply_text("Restarting the bot...")
-        await asyncio.create_subprocess_exec("python3", "update.py")
+
+        # Save the message ID to a file
+        with open("restart_msg_id.txt", "w") as f:
+            f.write(str(restartmsg.message_id))
+        
+        update_proc = await asyncio.create_subprocess_exec("python3", "update.py")
+        await update_proc.communicate()
+        
         os.execl(sys.executable, sys.executable, "main.py")
         
     except Exception as e:
         logger.error("Error in restart: %s", e)
-    await restartmsg.edit_text("Restarted the bot!")
+        await restartmsg.edit_text("Failed to restart the bot.")
+    

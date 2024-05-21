@@ -93,15 +93,10 @@ async def download_file(client, message):
             await msg.edit_text(f"Processing {file_name}....")
             logger.info(f"Downloaded {file_name} to server. Time taken: {time.time() - c_time} seconds.")
         except Exception as e:
-            attempt +=1
-            logger.error(f"Download attempt {attempt} for {file_name} failed: {e}")
-            if attempt < 3:
-                await msg.edit_text(f"Retrying download of {file_name} ({attempt}/3)...")
-            #await msg.edit_text(f"Error while downloading {file_name}")
+            logger.error(f"Error while downloading {file_name}: {e}")
+            await msg.edit_text(f"Error while downloading {file_name}")
             clean_up(download_location +".temp", None, file_name)
-    await msg.edit_text(f"Failed to download {file_name} after 3 attempts.")
-    logger.error(f"Failed to download {file_name} after 3 attempts.")
-    clean_up(download_location +".temp", None, file_name)
+            return
     try:
         if LOG_MODE:
             await trojanz.copy_message(client,LOG_MEDIA_CHANNEL, media.chat.id, media.id,caption,parse_mode=ParseMode.HTML)

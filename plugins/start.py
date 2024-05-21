@@ -105,6 +105,7 @@ async def restart(client, message):
         try:
             with open("restart_msg_id.txt", "w") as f:
                 f.write(str(restartmsg.id))
+                logger.info("Written restart message ID to file")
         except Exception as e:
             logger.error("Failed to save restart message ID: %s", e)
             pass

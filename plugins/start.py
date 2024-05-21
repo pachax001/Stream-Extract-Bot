@@ -100,10 +100,10 @@ async def restart(client, message):
         with open("restart_msg_id.txt", "w") as f:
             f.write(str(restartmsg.id))
             logger.info("Written restart message ID to file")
-            file_list = os.listdir()
-            for file_name in file_list:
-            #print(file_name)
-                logger.info(file_name)
+        file_list = os.listdir()
+        for file_name in file_list:
+            print(file_name)
+            logger.info(file_name)
     except Exception as e:
         logger.error("Failed to save restart message ID: %s", e)
         pass

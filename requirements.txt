@@ -3,5 +3,6 @@ ffmpeg
 hachoir
 pyrofork
 python-dotenv
+pytz
 TgCrypto
 

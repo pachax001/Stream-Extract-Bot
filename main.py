@@ -3,11 +3,18 @@ import asyncio
 from pyrogram import Client
 from config import Config
 from helpers.logger import logger
+import datetime
+import pytz
 
 async def edit_restart_message(app):
     
     # This function edits a restart message if it exists
     try:
+        current_time = datetime.datetime.now(pytz.timezone('Asia/Kolkata'))
+        date_formatted = current_time.strftime("%d/%m/%y")
+        time_formatted = current_time.strftime("%I:%M:%S %p")
+        version = "v1.0.1.m"
+        restart_message = f"⌬ Restarted Successfully!\n┠ Date: {date_formatted}\n┠ Time: {time_formatted}\n┠ TimeZone: Asia/Kolkata\n┖ Version: {version}"
         if os.path.exists("restart_msg_id.txt"):
             with open("restart_msg_id.txt", "r") as f:
                 message_id = int(f.read().strip())
@@ -15,7 +22,7 @@ async def edit_restart_message(app):
             await app.edit_message_text(
                 chat_id=Config.OWNER_ID,  # Assumes OWNER_ID is the chat where the message was sent
                 message_id=message_id,
-                text="Restarted successfully!"
+                text=restart_message
             )
             logger.info("Restart message edited successfully.")
             os.remove("restart_msg_id.txt")

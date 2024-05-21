@@ -27,5 +27,6 @@ if UPSTREAM_REPO is not None:
 
     if update.returncode == 0:
         logger.info('Successfully updated with latest commit from UPSTREAM_REPO')
+        
     else:
         logger.error('Something went wrong while updating, check UPSTREAM_REPO if valid or not!')

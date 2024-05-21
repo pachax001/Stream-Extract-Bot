@@ -3,7 +3,7 @@ from pyrogram import Client
 
 from config import Config
 from helpers.logger import logger
-
+import asyncio
 # Initialize your Pyrogram client
 app = Client(
     "TroJanz",
@@ -31,10 +31,11 @@ async def edit_restart_message():
         finally:
             os.remove("restart_msg_id.txt")
 
-@app.on_startup
-async def on_startup():
-    await edit_restart_message()
+
 
 if __name__ == "__main__":
+    logger.info("Starting bot...")
+    app.start()
+    asyncio.run(edit_restart_message())
     logger.info("Bot has started.")
     app.run()

@@ -100,10 +100,6 @@ async def restart(client, message):
         with open("restart_msg_id.txt", "w") as f:
             f.write(str(restartmsg.id))
             logger.info("Written restart message ID to file")
-        file_list = os.listdir()
-        for file_name in file_list:
-            print(file_name)
-            logger.info(file_name)
     except Exception as e:
         logger.error("Failed to save restart message ID: %s", e)
         pass
@@ -111,12 +107,6 @@ async def restart(client, message):
         if await is_ffmpeg_running():
             proc = await asyncio.create_subprocess_exec("pkill", "-9", "-f", "ffmpeg")
             await proc.communicate()
-        
-       
-
-        # Save the message ID to a file
-        
-        
         update_proc = await asyncio.create_subprocess_exec("python3", "update.py")
         await update_proc.communicate()
         

@@ -8,10 +8,6 @@ async def edit_restart_message(app):
     
     # This function edits a restart message if it exists
     try:
-        file_list = os.listdir()
-        for file_name in file_list:
-            print(file_name)
-            logger.info(file_name)
         if os.path.exists("restart_msg_id.txt"):
             with open("restart_msg_id.txt", "r") as f:
                 message_id = int(f.read().strip())

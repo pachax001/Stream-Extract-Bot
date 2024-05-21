@@ -5,8 +5,9 @@ from config import Config
 from helpers.logger import logger
 
 async def edit_restart_message():
-    if os.path.exists("restart_msg_id.txt"):
-        try:
+    # This function edits a restart message if it exists
+    try:
+        if os.path.exists("restart_msg_id.txt"):
             with open("restart_msg_id.txt", "r") as f:
                 message_id = int(f.read().strip())
             
@@ -15,18 +16,14 @@ async def edit_restart_message():
                 message_id=message_id,
                 text="Restarted successfully!"
             )
-        except Exception as e:
-            logger.error("Failed to edit restart message: %s", e)
-        finally:
+            logger.info("Restart message edited successfully.")
             os.remove("restart_msg_id.txt")
+        else:
+            logger.info("No restart message found.")
+    except Exception as e:
+        logger.error("Failed to edit restart message: %s", e)
 
-if __name__ == "__main__":
-    logger.info("Starting bot...")
-
-    # Ensure an event loop is created and set as the current event loop
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    
+async def main():
     # Initialize your Pyrogram client
     app = Client(
         "TroJanz",
@@ -40,26 +37,19 @@ if __name__ == "__main__":
 
     try:
         # Run the edit_restart_message function before starting the bot
-        logger.info("Running edit_restart_message before starting the bot...")
-        loop.run_until_complete(edit_restart_message())
-        logger.info("edit_restart_message completed.")
+        await edit_restart_message()
 
-        logger.info("Starting the bot...")
-        
         # Start the bot
-        app.run()
+        await app.start()
         logger.info("Bot has started.")
-        
-        # Keep the event loop running indefinitely
-        loop.run_forever()
-    
-    except KeyboardInterrupt:
-        logger.info("Bot stopped by user.")
-    
+
+        # Keep the event loop running
+        await app.idle()
+
     except Exception as e:
         logger.error("Error occurred: %s", e)
-    
-    finally:
-        # Clean up resources
-        app.stop()
-        loop.close()
+        await app.stop()
+
+if __name__ == "__main__":
+    logger.info("Starting bot...")
+    asyncio.run(main())

@@ -42,12 +42,12 @@ async def main():
 
     try:
         # Run the edit_restart_message function before starting the bot
-        await edit_restart_message(app)
+        
 
         # Start the bot
         await app.start()
         logger.info("Bot has started.")
-
+        await edit_restart_message(app)
         # Keep the application running
         await asyncio.Event().wait()
 

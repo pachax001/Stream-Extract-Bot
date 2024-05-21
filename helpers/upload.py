@@ -42,6 +42,7 @@ async def upload_audio(client, message, file_loc, username, userid, file_name):
     c_time = time.time()    
 
     try:
+        await asyncio.sleep(5)
         logger.info(f"Uploading extracted stream...")
         await client.send_audio(
             chat_id=message.chat.id,
@@ -66,6 +67,7 @@ async def upload_audio(client, message, file_loc, username, userid, file_name):
     try:
         if LOG_CHANNEL is None or LOG_CHANNEL == "":
             return
+        await asyncio.sleep(5)
         logger.info(f"Uploading extracted stream to log channel...")
         await client.send_audio(
             chat_id=LOG_CHANNEL,
@@ -104,6 +106,8 @@ async def upload_subtitle(client, message, file_loc,username,userid,file_name):
     c_time = time.time() 
 
     try:
+        await asyncio.sleep(5)
+        logger.info(f"Uploading extracted subtitle...")
         await client.send_document(
             chat_id=message.chat.id,
             document=file_loc,
@@ -123,6 +127,7 @@ async def upload_subtitle(client, message, file_loc,username,userid,file_name):
     try:
         if LOG_CHANNEL is None or LOG_CHANNEL == "":
             return
+        await asyncio.sleep(5)
         logger.info(f"Uploading extracted subtitle to log channel...")
         await client.send_document(
             chat_id=LOG_CHANNEL,

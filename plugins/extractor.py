@@ -33,6 +33,7 @@ async def confirm_dwnld(client, message):
         except:
             user_first_name = "Unknown"
 
+        await asyncio.sleep(2)
         logger.info(f"User {user_id} - {user_first_name} requested to download a video")
 
         await message.reply_text(
@@ -44,6 +45,7 @@ async def confirm_dwnld(client, message):
                 [InlineKeyboardButton(text="CANCEL", callback_data="close")]
             ])
         )
+        
     else:
         await message.reply_text(
             "Invalid Media",

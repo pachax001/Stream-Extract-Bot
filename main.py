@@ -44,7 +44,7 @@ async def main():
         logger.info("Bot has started.")
 
         # Keep the event loop running
-        await app.idle()
+        app.run()
 
     except Exception as e:
         logger.error("Error occurred: %s", e)

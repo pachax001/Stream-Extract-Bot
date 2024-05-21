@@ -18,6 +18,7 @@ git clone https://github.com/pachax001/Stream-Extract-Bot.git streamextract/ && 
 ```
 cp sample_config.env config.env
 ```
+Edit config.env
 ```
 nano config.env
 ```
@@ -49,8 +50,10 @@ sudo docker system prune -a
 
 * AUTH_USERS    - Get from @MissRose_bot by /id command. Put id seperated by commas.
 
-* LOG_CHANNEL   - Create a new channel and add the id of the channel. Remember to put the log channel ID also to the AUTH_USERS. Add the bot to the channel as admin.After starting the bot send a message to the log channel
+* LOG_CHANNEL   - Create a new channel and add the id of the channel. This channel will send the extracted subtitles or videos.
 
-* BOT_USERNAME  - Username of the bot. Do not put @ before the username. Only add the name. Eg: Extractorbot
+* LOG_MEDIA_CHANNEL   - Create a new channel and add the id of the channel. This channel for the source file. If this channel is not set LOG_CHANNEL will be used.
+
+* BOT_USERNAME  - Username of the bot. Eg: @Extractorbot
 
 

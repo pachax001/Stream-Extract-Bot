@@ -8,6 +8,7 @@ from pyrogram import Client
 from config import Config
 from helpers.logger import logger
 
+
 if __name__ == "__main__":
     plugins = dict(
         root="plugins"

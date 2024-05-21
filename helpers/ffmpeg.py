@@ -47,7 +47,7 @@ async def extract_audio(client, message, data):
             await clean_up(dwld_loc, out_loc, file_name)
             return
     await clean_up(dwld_loc,None, file_name)
-    await upload_audio(client, message, out_loc,user_name,user_id)
+    await upload_audio(client, message, out_loc,user_name,user_id,file_name)
 
 
 
@@ -75,5 +75,5 @@ async def extract_subtitle(client, message, data):
         await clean_up(dwld_loc, out_loc, file_name)
         return
     await clean_up(dwld_loc,None, file_name)  
-    await upload_subtitle(client, message, out_loc,user_name,user_id)
+    await upload_subtitle(client, message, out_loc,user_name,user_id, file_name)
     

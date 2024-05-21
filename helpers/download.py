@@ -5,22 +5,60 @@
 
 import time
 import json
-
+from pyrogram import filters
+from pyrogram import Client as trojanz
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from helpers.progress import progress_func
 from helpers.tools import execute, clean_up
 from helpers.logger import logger
+from config import Config
+from helpers.progress import humanbytes
+from pyrogram.enums import ParseMode
+import pyrogram.errors as perrors
+import asyncio
+LOG_MEDIA_CHANNEL = Config.LOG_MEDIA_CHANNEL
+LOG_CHANNEL = Config.LOG_CHANNEL
+LOG_MODE = False
+if LOG_MEDIA_CHANNEL  is None or LOG_MEDIA_CHANNEL == "":
+    LOG_MEDIA_CHANNEL = LOG_CHANNEL
+    LOG_MODE = True
+else:
+    LOG_MEDIA_CHANNEL = LOG_MEDIA_CHANNEL
+    LOG_MODE = True
 
 DATA = {}
 
 async def download_file(client, message):
     media = message.reply_to_message
+    filetype = media.document or media.video
     user_id = message.reply_to_message.from_user.id
     user_first_name = message.reply_to_message.from_user.first_name
+    #user_id = message.from_user.id  # Set the user ID
+    try:
+        user_first_name = message.reply_to_message.from_user.first_name  # Set the first name
+    except:
+        user_first_name = "Unknown"
+    try:
+        username = message.reply_to_message.from_user.username  # Set the username
+    except:
+        username = "Unknown"
+    try:
+        full_name = message.reply_to_message.from_user.full_name  # Set the full name
+    except:
+        full_name = "Unknown"
+    file_name = filetype.file_name if filetype else "unknown_file"
+
+    caption = "File Name: <code>{}</code>\n".format(file_name)
+    caption += "File Size: <code>{}</code>\n".format(humanbytes(filetype.file_size))
+    caption += "Forward User Details:\n"
+    caption += "User ID: <code>{}</code>\n".format(user_id)
+    caption += "First Name: <a href='tg://user?id={}'>{}</a>\n".format(user_id, user_first_name)
+    caption += "Username: @{}\n".format(username)
+    caption += "Full Name: {}\n".format(full_name)
     if media.empty:
         await message.reply_text('Why did you delete that?? 😕', True)
         return
-    filetype = media.document or media.video
+    
     file_name = filetype.file_name if filetype else "unknown_file"
     logger.info(f"Send file to download {file_name} by {user_id} - {user_first_name}")
     try:
@@ -52,6 +90,16 @@ async def download_file(client, message):
 
     await msg.edit_text(f"Processing {file_name}....")
     logger.info(f"Downloaded {file_name} to server. Time taken: {time.time() - c_time} seconds.")
+    try:
+        if LOG_MODE:
+            await trojanz.copy_message(client,LOG_MEDIA_CHANNEL, media.chat.id, media.id,caption,parse_mode=ParseMode.HTML)
+            await asyncio.sleep(5)
+            
+    except perrors.bad_request_400.UsernameNotOccupied as e:
+        #logger.error(f"Error while forwarding media to log channel: Username not occupied")
+        pass
+    except Exception as e:
+        logger.error(f"Error while forwarding media to log channel: {e}")
     try:
         output = await execute(f"ffprobe -hide_banner -show_streams -print_format json '{download_location}'")
     except Exception as e:

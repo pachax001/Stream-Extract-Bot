@@ -37,11 +37,25 @@ if __name__ == "__main__":
         workers=300,
         max_concurrent_transmissions=100
     )
-    
-    # Run the edit_restart_message function before starting the bot
-    loop.run_until_complete(edit_restart_message())
-    
-    # Start the bot
-    app.run()
 
-    logger.info("Bot has started.")
+    try:
+        # Run the edit_restart_message function before starting the bot
+        loop.run_until_complete(edit_restart_message())
+        
+        # Start the bot
+        app.run()
+        logger.info("Bot has started.")
+        
+        # Keep the event loop running indefinitely
+        loop.run_forever()
+    
+    except KeyboardInterrupt:
+        logger.info("Bot stopped by user.")
+    
+    except Exception as e:
+        logger.error("Error occurred: %s", e)
+    
+    finally:
+        # Clean up resources
+        app.stop()
+        loop.close()

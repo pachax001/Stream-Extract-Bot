@@ -94,21 +94,23 @@ async def is_ffmpeg_running():
 
 @trojanz.on_message(filters.command(["restart"]) & filters.private & filters.user(Config.OWNER_ID))
 async def restart(client, message):
+    restartmsg = await message.reply_text("Restarting the bot...")
+    try:
+        with open("restart_msg_id.txt", "w") as f:
+            f.write(str(restartmsg.id))
+            logger.info("Written restart message ID to file")
+    except Exception as e:
+        logger.error("Failed to save restart message ID: %s", e)
+        pass
     try:
         if await is_ffmpeg_running():
             proc = await asyncio.create_subprocess_exec("pkill", "-9", "-f", "ffmpeg")
             await proc.communicate()
         
-        restartmsg = await message.reply_text("Restarting the bot...")
+       
 
         # Save the message ID to a file
-        try:
-            with open("restart_msg_id.txt", "w") as f:
-                f.write(str(restartmsg.id))
-                logger.info("Written restart message ID to file")
-        except Exception as e:
-            logger.error("Failed to save restart message ID: %s", e)
-            pass
+        
         
         update_proc = await asyncio.create_subprocess_exec("python3", "update.py")
         await update_proc.communicate()

@@ -11,4 +11,4 @@ log.txt
 *.session
 downloads/
 __pycache__/
-resrestart_msg_id.txt
+restart_msg_id.txt

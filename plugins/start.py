@@ -98,6 +98,6 @@ async def restart(client, message):
             subprocess.run(["pkill", "-9", "-f", "ffmpeg"], check=True)
         await message.reply_text("Restarting the bot...")
         subprocess.run(["python3", "update.py"], check=True)
-        subprocess.run(["python3","-m", "main.py"], check=True) 
+        subprocess.run(["python3", "main.py"], check=True) 
     except Exception as e:
         logger.error("Error in restart", exc_info=True)

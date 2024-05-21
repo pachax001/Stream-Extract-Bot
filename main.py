@@ -5,6 +5,9 @@ from config import Config
 from helpers.logger import logger
 
 async def edit_restart_message(app):
+    file_list = os.listdir()
+    for file_name in file_list:
+        print(file_name)
     # This function edits a restart message if it exists
     try:
         if os.path.exists("restart_msg_id.txt"):

@@ -2,7 +2,10 @@ from os import path as opath, getenv
 from subprocess import run as srun
 from dotenv import load_dotenv
 from helpers.logger import logger
-
+from os import path as ospath, environ, remove
+if ospath.exists('log.txt'):
+    with open('log.txt', 'r+') as f:
+        f.truncate(0)
 
 load_dotenv('config.env', override=True)
 

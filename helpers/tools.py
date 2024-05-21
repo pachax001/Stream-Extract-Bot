@@ -30,10 +30,11 @@ async def execute(cmnd: str) -> Tuple[str, str, int, int]:
 async def clean_up(input1, input2=None, filename=None):
     retries = 3
     while retries > 0:
-        logger.info(f"retrying to delete file {filename} in input1: attempt {retries}")
+        logger.info(f"trying to delete file {filename} in input1: attempt {3 - retries + 1}")
         try:
             if input1 and os.path.exists(input1):
                 os.remove(input1)
+                logger.info(f"Deleted file {filename} in input1")
                 break
             #os.remove(input1)
         except Exception as e:

@@ -13,6 +13,7 @@ import os
 import sys
 import subprocess
 from helpers.logger import logger
+import asyncio
 @trojanz.on_message(filters.command(["start"]) & filters.private)
 async def start(client, message):
     await message.reply_text(
@@ -95,9 +96,9 @@ async def is_ffmpeg_running():
 async def restart(client, message):
     try:
         if await is_ffmpeg_running():
-            subprocess.run(["pkill", "-9", "-f", "ffmpeg"], check=True)
+            await asyncio.create_subprocess_exec("pkill", "-9", "-f", "ffmpeg")
         await message.reply_text("Restarting the bot...")
-        subprocess.run(["python3", "update.py"], check=True)
-        subprocess.run(["python3", "-m","main"], check=True) 
+        await asyncio.create_subprocess_exec("python3", "update.py")
+        os.execl(sys.executable, sys.executable, "main.py")
     except Exception as e:
-        logger.error("Error in restart", e)
+        logger.error("Error in restart: %s", e)

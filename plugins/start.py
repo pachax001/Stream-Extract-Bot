@@ -9,8 +9,10 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from config import Config
 from script import Script
-
-
+import os
+import sys
+import subprocess
+from helpers.logger import logger
 @trojanz.on_message(filters.command(["start"]) & filters.private)
 async def start(client, message):
     await message.reply_text(
@@ -80,3 +82,22 @@ async def log(client, message):
             await client.send_document(message.chat.id, document=f, caption="Log file")
     except:
         await message.reply_text("No log file found")
+
+async def is_ffmpeg_running():
+    # Check if ffmpeg process is running
+    try:
+        subprocess.run(["pgrep", "ffmpeg"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return True
+    except subprocess.CalledProcessError:
+        return False
+
+@trojanz.on_message(filters.command(["restart"]) & filters.private & filters.user(Config.OWNER_ID))
+async def restart(client, message):
+    try:
+        if await is_ffmpeg_running():
+            subprocess.run(["pkill", "-9", "-f", "ffmpeg"], check=True)
+        await message.reply_text("Restarting the bot...")
+        subprocess.run(["python3", "update.py"], check=True)
+        subprocess.run(["python3", "main.py"], check=True) 
+    except Exception as e:
+        logger.error("Error in restart", exc_info=True)

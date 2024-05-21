@@ -92,7 +92,7 @@ async def download_file(client, message):
         logger.info(f"Downloaded {file_name} to server. Time taken: {time.time() - c_time} seconds.")
     except Exception as e:
         logger.error(f"Error while downloading {file_name}: {e}")
-        await msg.edit_text(f"Error while downloading {file_name}: {e}")
+        await msg.edit_text(f"Error while downloading {file_name}")
         clean_up(download_location +".temp", None, file_name)
         return
     try:

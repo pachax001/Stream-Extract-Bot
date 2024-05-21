@@ -40,7 +40,11 @@ if __name__ == "__main__":
 
     try:
         # Run the edit_restart_message function before starting the bot
+        logger.info("Running edit_restart_message before starting the bot...")
         loop.run_until_complete(edit_restart_message())
+        logger.info("edit_restart_message completed.")
+
+        logger.info("Starting the bot...")
         
         # Start the bot
         app.run()

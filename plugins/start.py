@@ -103,7 +103,7 @@ async def restart(client, message):
 
         # Save the message ID to a file
         with open("restart_msg_id.txt", "w") as f:
-            f.write(str(restartmsg.message_id))
+            f.write(str(restartmsg.id))
         
         update_proc = await asyncio.create_subprocess_exec("python3", "update.py")
         await update_proc.communicate()

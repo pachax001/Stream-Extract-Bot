@@ -30,6 +30,7 @@ sudo docker compose up
 
 Added /log command to retireve log file of the bot.
 
+Added /restart command to  restart and update bot from repo.
 1. To stop docker container
  ```
 sudo docker compose down
@@ -55,5 +56,10 @@ sudo docker system prune -a
 * LOG_MEDIA_CHANNEL   - Create a new channel and add the id of the channel. This channel for the source file. If this channel is not set LOG_CHANNEL will be used.
 
 * BOT_USERNAME  - Username of the bot. Eg: @Extractorbot
+
+* UPSTREAM_REPO - Repo to update bot on restart.Default is this repo.
+
+* UPSTREAM_BRANCH - Repo branch for update. Default is master.
+
 
 

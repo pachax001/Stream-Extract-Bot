@@ -49,7 +49,8 @@ async def main():
 
         # Start the bot
         await app.start()
-        logger.info("Bot has started.")
+        me = await app.get_me()
+        logger.info(f"{me} has started.")
         await edit_restart_message(app)
         # Keep the application running
         await asyncio.Event().wait()

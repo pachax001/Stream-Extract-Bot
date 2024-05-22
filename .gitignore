@@ -12,3 +12,4 @@ log.txt
 downloads/
 __pycache__/
 restart_msg_id.txt
+update.py

@@ -16,6 +16,7 @@ from helpers.progress import humanbytes
 from pyrogram.enums import ParseMode
 import pyrogram.errors as perrors
 import asyncio
+import os
 LOG_MEDIA_CHANNEL = Config.LOG_MEDIA_CHANNEL
 LOG_CHANNEL = Config.LOG_CHANNEL
 LOG_MODE = False
@@ -47,6 +48,8 @@ async def download_file(client, message):
     except:
         full_name = "Unknown"
     file_name = filetype.file_name if filetype else "unknown_file"
+    filesize = filetype.file_size if filetype else 0
+    logger.info(f"Original file size: {filesize}")
 
     caption = "File Name: <code>{}</code>\n".format(file_name)
     caption += "File Size: <code>{}</code>\n".format(humanbytes(filetype.file_size))
@@ -88,6 +91,9 @@ async def download_file(client, message):
                 c_time
             )
         )
+        if download_location:
+            downloaded_file_size = os.path.getsize(download_location)
+            logger.info(f"Downloaded file size: {downloaded_file_size}")
 
         await msg.edit_text(f"Processing {file_name}....")
         logger.info(f"Downloaded {file_name} to server. Time taken: {time.time() - c_time} seconds.")

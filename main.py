@@ -5,6 +5,7 @@ from config import Config
 from helpers.logger import logger
 import datetime
 import pytz
+from pyrogram.types import User
 
 async def edit_restart_message(app):
     
@@ -13,7 +14,7 @@ async def edit_restart_message(app):
         current_time = datetime.datetime.now(pytz.timezone('Asia/Kolkata'))
         date_formatted = current_time.strftime("%d/%m/%y")
         time_formatted = current_time.strftime("%I:%M:%S %p")
-        version = "v1.0.1.m"
+        version = "v1.0.0.d"
         restart_message = f"⌬ Restarted Successfully!\n┠ Date: {date_formatted}\n┠ Time: {time_formatted}\n┠ TimeZone: Asia/Kolkata\n┖ Version: {version}"
         if os.path.exists("restart_msg_id.txt"):
             with open("restart_msg_id.txt", "r") as f:
@@ -49,7 +50,8 @@ async def main():
 
         # Start the bot
         await app.start()
-        logger.info("Bot has started.")
+        me = await app.get_me()
+        logger.info(f"{me.username} has started.")
         await edit_restart_message(app)
         # Keep the application running
         await asyncio.Event().wait()

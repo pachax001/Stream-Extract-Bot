@@ -26,15 +26,23 @@ async def edit_restart_message(app):
                 text=restart_message
             )
             if Config.LOG_CHANNEL is not None and Config.LOG_CHANNEL != "":
-                await app.send_message(
-                    chat_id=Config.LOG_CHANNEL,
-                    text=f"Restarted Successfully!\nDate: {date_formatted}\nTime: {time_formatted}\nTimeZone: Asia/Kolkata\nVersion: {version}"
-                )
+                try:
+                    await app.send_message(
+                        chat_id=Config.LOG_CHANNEL,
+                        text=f"Restarted Successfully!\nDate: {date_formatted}\nTime: {time_formatted}\nTimeZone: Asia/Kolkata\nVersion: {version}"
+                    )
+                except Exception as e:
+                    logger.error("Failed to send restart message to LOG_CHANNEL: %s", e)
+                    pass
             if Config.LOG_MEDIA_CHANNEL is not None and Config.LOG_MEDIA_CHANNEL != "":
-                await app.send_message(
-                    chat_id=Config.LOG_MEDIA_CHANNEL,
-                    text=f"Restarted Successfully!\nDate: {date_formatted}\nTime: {time_formatted}\nTimeZone: Asia/Kolkata\nVersion: {version}"
-                )
+                try:
+                    await app.send_message(
+                        chat_id=Config.LOG_MEDIA_CHANNEL,
+                        text=f"Restarted Successfully!\nDate: {date_formatted}\nTime: {time_formatted}\nTimeZone: Asia/Kolkata\nVersion: {version}"
+                    )
+                except Exception as e:
+                    logger.error("Failed to send restart message to LOG_MEDIA_CHANNEL: %s", e)
+                    pass
 
             logger.info("Restart message edited successfully.")
             os.remove("restart_msg_id.txt")

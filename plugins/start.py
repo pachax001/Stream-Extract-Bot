@@ -6,7 +6,7 @@
 from pyrogram import filters
 from pyrogram import Client as trojanz
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-
+import shutil
 from config import Config
 from script import Script
 import os
@@ -103,6 +103,13 @@ async def restart(client, message):
     except Exception as e:
         logger.error("Failed to save restart message ID: %s", e)
         pass
+    if os.path.exists("downloads"):
+        try:
+            shutil.rmtree("downloads")
+            logger.info("Deleted downloads folder")
+        except Exception as e:
+            logger.error("Failed to delete downloads folder: %s", e)
+            pass
     try:
         if await is_ffmpeg_running():
             proc = await asyncio.create_subprocess_exec("pkill", "-9", "-f", "ffmpeg")

@@ -16,7 +16,7 @@ async def edit_restart_message(app):
         time_formatted = current_time.strftime("%I:%M:%S %p")
 
 
-        version = "v1.0.5.m"
+        version = "v1.0.6.m"
 
         restart_message = f"⌬ Restarted Successfully!\n┠ Date: {date_formatted}\n┠ Time: {time_formatted}\n┠ TimeZone: Asia/Kolkata\n┖ Version: {version}"
         if os.path.exists("restart_msg_id.txt"):

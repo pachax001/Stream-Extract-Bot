@@ -50,7 +50,7 @@ async def main():
 
         # Start the bot
         await app.start()
-        me = await app.get_me
+        me = await app.get_me()
         logger.info(f"{me.username} has started.")
         await edit_restart_message(app)
         # Keep the application running

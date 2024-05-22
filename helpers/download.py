@@ -101,6 +101,7 @@ async def download_file(client, message):
                     await msg.edit_text(f"File size mismatch. Original: {originalfilesize}, Downloaded: {downloaded_file_size}")
                     await clean_up(download_location, None, file_name)
                     retries += 1
+                    logger.info(f"Retrying download {retries}/{MAX_RETRIES}...")
                     continue
                 else:
                     await msg.edit_text(f"Processing {file_name}....")

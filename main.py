@@ -14,7 +14,7 @@ async def edit_restart_message(app):
         current_time = datetime.datetime.now(pytz.timezone('Asia/Kolkata'))
         date_formatted = current_time.strftime("%d/%m/%y")
         time_formatted = current_time.strftime("%I:%M:%S %p")
-        version = "v1.0.0.d"
+        version = "v1.0.1.d"
         restart_message = f"⌬ Restarted Successfully!\n┠ Date: {date_formatted}\n┠ Time: {time_formatted}\n┠ TimeZone: Asia/Kolkata\n┖ Version: {version}"
         if os.path.exists("restart_msg_id.txt"):
             with open("restart_msg_id.txt", "r") as f:

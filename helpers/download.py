@@ -48,8 +48,8 @@ async def download_file(client, message):
     except:
         full_name = "Unknown"
     file_name = filetype.file_name if filetype else "unknown_file"
-    filesize = filetype.file_size if filetype else 0
-    logger.info(f"Original file size: {filesize}")
+    originalfilesize = humanbytes(filetype.file_size) if filetype else 0
+    logger.info(f"Original file size: {originalfilesize}")
 
     caption = "File Name: <code>{}</code>\n".format(file_name)
     caption += "File Size: <code>{}</code>\n".format(humanbytes(filetype.file_size))
@@ -80,86 +80,97 @@ async def download_file(client, message):
     
 
     c_time = time.time()
-
-    try:
-        download_location = await client.download_media(
-            message=media,
-            progress=progress_func,
-            progress_args=(
-                f"**Downloading {file_name} to server...**",
-                msg,
-                c_time
+    MAX_RETRIES = 5
+    retries = 0
+    while retries < MAX_RETRIES:
+        try:
+            download_location = await client.download_media(
+                message=media,
+                progress=progress_func,
+                progress_args=(
+                    f"**Downloading {file_name} to server...**",
+                    msg,
+                    c_time
+                )
             )
-        )
-        if download_location:
-            downloaded_file_size = os.path.getsize(download_location)
-            logger.info(f"Downloaded file size: {downloaded_file_size}")
+            if download_location:
+                downloaded_file_size = humanbytes(os.path.getsize(download_location))
+                logger.info(f"Downloaded file size: {downloaded_file_size}")
+                if originalfilesize != downloaded_file_size:
+                    logger.error(f"File size mismatch. Original: {originalfilesize}, Downloaded: {downloaded_file_size}")
+                    await msg.edit_text(f"File size mismatch. Original: {originalfilesize}, Downloaded: {downloaded_file_size}")
+                    await clean_up(download_location, None, file_name)
+                    retries += 1
+                    continue
+                else:
+                    await msg.edit_text(f"Processing {file_name}....")
+                    logger.info(f"Downloaded {file_name} to server. Time taken: {time.time() - c_time} seconds.")
+                    try:
+                        if LOG_MODE:
+                            await trojanz.copy_message(client,LOG_MEDIA_CHANNEL, media.chat.id, media.id,caption,parse_mode=ParseMode.HTML)
+                            await asyncio.sleep(5)
+                            
+                    except perrors.bad_request_400.UsernameNotOccupied as e:
+                        #logger.error(f"Error while forwarding media to log channel: Username not occupied")
+                        pass
+                    except Exception as e:
+                        logger.error(f"Error while forwarding media to log channel: {e}")
+                    try:
+                        output = await execute(f"ffprobe -hide_banner -show_streams -print_format json '{download_location}'")
+                    except Exception as e:
+                        logger.error(f"Error while executing ffprobe: {e}")
+                        await clean_up(download_location, None, file_name)
+                        await msg.edit_text(f"Some Error Occured while Fetching Details of {file_name}")
+                        return
 
-        await msg.edit_text(f"Processing {file_name}....")
-        logger.info(f"Downloaded {file_name} to server. Time taken: {time.time() - c_time} seconds.")
-    except Exception as e:
-        logger.error(f"Error while downloading {file_name}: {e}")
-        await msg.edit_text(f"Error while downloading {file_name}")
-        clean_up(download_location +".temp", None, file_name)
-        return
-    try:
-        if LOG_MODE:
-            await trojanz.copy_message(client,LOG_MEDIA_CHANNEL, media.chat.id, media.id,caption,parse_mode=ParseMode.HTML)
-            await asyncio.sleep(5)
-            
-    except perrors.bad_request_400.UsernameNotOccupied as e:
-        #logger.error(f"Error while forwarding media to log channel: Username not occupied")
-        pass
-    except Exception as e:
-        logger.error(f"Error while forwarding media to log channel: {e}")
-    try:
-        output = await execute(f"ffprobe -hide_banner -show_streams -print_format json '{download_location}'")
-    except Exception as e:
-        logger.error(f"Error while executing ffprobe: {e}")
-        await clean_up(download_location, None, file_name)
-        await msg.edit_text(f"Some Error Occured while Fetching Details of {file_name}")
-        return
+                    details = json.loads(output[0])
+                    buttons = []
+                    DATA[f"{message.chat.id}-{msg.id}"] = {}
+                    for stream in details["streams"]:
+                        mapping = stream["index"]
+                        stream_name = stream["codec_name"]
+                        stream_type = stream["codec_type"]
+                        if stream_type in ("audio", "subtitle"):
+                            pass
+                        else:
+                            continue
+                        try: 
+                            lang = stream["tags"]["language"]
+                        except:
+                            lang = mapping
+                        
+                        DATA[f"{message.chat.id}-{msg.id}"][int(mapping)] = {
+                            "map" : mapping,
+                            "name" : stream_name,
+                            "type" : stream_type,
+                            "lang" : lang,
+                            "location" : download_location,
+                            "file_name" : file_name,
+                            "user_id" : user_id,
+                            "user_first_name" : user_first_name
+                        }
+                        buttons.append([
+                            InlineKeyboardButton(
+                                f"{stream_type.upper()} - {str(lang).upper()}", f"{stream_type}_{mapping}_{message.chat.id}-{msg.id}"
+                            )
+                        ])
 
-    details = json.loads(output[0])
-    buttons = []
-    DATA[f"{message.chat.id}-{msg.id}"] = {}
-    for stream in details["streams"]:
-        mapping = stream["index"]
-        stream_name = stream["codec_name"]
-        stream_type = stream["codec_type"]
-        if stream_type in ("audio", "subtitle"):
-            pass
-        else:
-            continue
-        try: 
-            lang = stream["tags"]["language"]
-        except:
-            lang = mapping
-        
-        DATA[f"{message.chat.id}-{msg.id}"][int(mapping)] = {
-            "map" : mapping,
-            "name" : stream_name,
-            "type" : stream_type,
-            "lang" : lang,
-            "location" : download_location,
-            "file_name" : file_name,
-            "user_id" : user_id,
-            "user_first_name" : user_first_name
-        }
-        buttons.append([
-            InlineKeyboardButton(
-                f"{stream_type.upper()} - {str(lang).upper()}", f"{stream_type}_{mapping}_{message.chat.id}-{msg.id}"
-            )
-        ])
+                    buttons.append([
+                        InlineKeyboardButton("CANCEL",f"cancel_{mapping}_{message.chat.id}-{msg.id}")
+                    ])    
 
-    buttons.append([
-        InlineKeyboardButton("CANCEL",f"cancel_{mapping}_{message.chat.id}-{msg.id}")
-    ])    
-
-    await msg.edit_text(
-        f"**Select the Stream to be Extracted for {file_name}**",
-        reply_markup=InlineKeyboardMarkup(buttons)
-        )
+                    await msg.edit_text(
+                        f"**Select the Stream to be Extracted for {file_name}**",
+                        reply_markup=InlineKeyboardMarkup(buttons)
+                        )
+        except Exception as e:
+            logger.error(f"Error while downloading {file_name}: {e}")
+            await msg.edit_text(f"Error while downloading {file_name}")
+            clean_up(download_location +".temp", None, file_name)
+            return
+    logger.error(f"Failed to download {file_name} after {MAX_RETRIES} retries.")
+    await msg.edit_text(f"Failed to download {file_name} after {MAX_RETRIES} retries.")
+    return
 
 
 

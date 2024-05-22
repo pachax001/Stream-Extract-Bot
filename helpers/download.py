@@ -163,6 +163,7 @@ async def download_file(client, message):
                         f"**Select the Stream to be Extracted for {file_name}**",
                         reply_markup=InlineKeyboardMarkup(buttons)
                         )
+                    break
         except Exception as e:
             logger.error(f"Error while downloading {file_name}: {e}")
             await msg.edit_text(f"Error while downloading {file_name}")

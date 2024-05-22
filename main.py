@@ -25,6 +25,17 @@ async def edit_restart_message(app):
                 message_id=message_id,
                 text=restart_message
             )
+            if Config.LOG_CHANNEL is not None and Config.LOG_CHANNEL != "":
+                await app.send_message(
+                    chat_id=Config.LOG_CHANNEL,
+                    text=f"Restarted Successfully!\nDate: {date_formatted}\nTime: {time_formatted}\nTimeZone: Asia/Kolkata\nVersion: {version}"
+                )
+            if Config.LOG_MEDIA_CHANNEL is not None and Config.LOG_MEDIA_CHANNEL != "":
+                await app.send_message(
+                    chat_id=Config.LOG_MEDIA_CHANNEL,
+                    text=f"Restarted Successfully!\nDate: {date_formatted}\nTime: {time_formatted}\nTimeZone: Asia/Kolkata\nVersion: {version}"
+                )
+
             logger.info("Restart message edited successfully.")
             os.remove("restart_msg_id.txt")
         else:

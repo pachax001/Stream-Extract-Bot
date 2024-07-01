@@ -15,6 +15,7 @@ from config import Config
 from helpers.progress import humanbytes
 from pyrogram.enums import ParseMode
 import pyrogram.errors as perrors
+from pyrogram.errors import FloodWait
 import asyncio
 import os
 LOG_MEDIA_CHANNEL = Config.LOG_MEDIA_CHANNEL
@@ -167,11 +168,17 @@ async def download_file(client, message):
                     return
         except perrors.MessageNotModified:
             pass
+        except FloodWait as e:
+            time.sleep(e.value)
+            await msg.edit_text(f"Error while downloading {file_name}. Flood Error. Please wait {e.value}seconds.")
+            logger.error(f"Error while downloading {file_name}: {e}")
         except Exception as e:
             logger.error(f"Error while downloading {file_name}: {e}")
             await msg.edit_text(f"Error while downloading {file_name}")
             clean_up(download_location +".temp", None, file_name)
             return
+        
+
     logger.error(f"Failed to download {file_name} after {MAX_RETRIES} retries.")
     await msg.edit_text(f"Failed to download {file_name} after {MAX_RETRIES} retries.")
     return

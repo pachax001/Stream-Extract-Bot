@@ -168,10 +168,6 @@ async def download_file(client, message):
                     return
         except perrors.MessageNotModified:
             pass
-        except FloodWait as e:
-            time.sleep(e.value)
-            await msg.edit_text(f"Error while downloading {file_name}. Flood Error. Please wait {e.value}seconds.")
-            logger.error(f"Error while downloading {file_name}: {e}")
         except Exception as e:
             logger.error(f"Error while downloading {file_name}: {e}")
             await msg.edit_text(f"Error while downloading {file_name}")

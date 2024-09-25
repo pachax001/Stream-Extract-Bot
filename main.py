@@ -16,7 +16,7 @@ async def edit_restart_message(app):
         time_formatted = current_time.strftime("%I:%M:%S %p")
 
 
-        version = "v1.0.6.m"
+        version = "v1.0.7.m"
 
         restart_message = f"⌬ Restarted Successfully!\n┠ Date: {date_formatted}\n┠ Time: {time_formatted}\n┠ TimeZone: Asia/Kolkata\n┖ Version: {version}"
         if os.path.exists("restart_msg_id.txt"):
@@ -24,14 +24,14 @@ async def edit_restart_message(app):
                 message_id = int(f.read().strip())
             
             await app.edit_message_text(
-                chat_id=Config.OWNER_ID,  # Assumes OWNER_ID is the chat where the message was sent
+                chat_id=Config.OWNER_ID,  #
                 message_id=message_id,
                 text=restart_message
             )
             if Config.LOG_CHANNEL is not None and Config.LOG_CHANNEL != "":
                 try:
                     await app.send_message(
-                        chat_id=Config.LOG_CHANNEL,
+                        chat_id=int(Config.LOG_CHANNEL),
                         text=f"Restarted Successfully!\nDate: {date_formatted}\nTime: {time_formatted}\nTimeZone: Asia/Kolkata\nVersion: {version}"
                     )
                 except Exception as e:
@@ -40,7 +40,7 @@ async def edit_restart_message(app):
             if Config.LOG_MEDIA_CHANNEL is not None and Config.LOG_MEDIA_CHANNEL != "":
                 try:
                     await app.send_message(
-                        chat_id=Config.LOG_MEDIA_CHANNEL,
+                        chat_id=int(Config.LOG_MEDIA_CHANNEL),
                         text=f"Restarted Successfully!\nDate: {date_formatted}\nTime: {time_formatted}\nTimeZone: Asia/Kolkata\nVersion: {version}"
                     )
                 except Exception as e:
@@ -55,7 +55,6 @@ async def edit_restart_message(app):
         logger.error("Failed to edit restart message: %s", e)
 
 async def main():
-    # Initialize your Pyrogram client
     app = Client(
         "TroJanz",
         bot_token=Config.BOT_TOKEN,
@@ -67,7 +66,7 @@ async def main():
     )
 
     try:
-        # Run the edit_restart_message function before starting the bot
+        
         
 
         # Start the bot

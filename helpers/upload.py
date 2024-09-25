@@ -1,8 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-# @trojanzhex
-
-
 import time
 from pyrogram import Client, filters
 from hachoir.parser import createParser

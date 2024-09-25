@@ -1,8 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-# @trojanzhex
-
-
 from helpers.tools import execute, clean_up
 from helpers.upload import upload_audio, upload_subtitle
 from helpers.logger import logger

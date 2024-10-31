@@ -1,28 +1,31 @@
-# Use a lightweight base image
-FROM alpine:latest
+# Use a lightweight Debian base image
+FROM debian:bookworm-slim
 
 # Set the working directory
 WORKDIR /usr/src/app
 
 # Install necessary packages and build dependencies
-RUN apk --no-cache add \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
-    py3-pip \
+    python3-venv \
+    python3-pip \
     git \
     ffmpeg \
-    build-base \
+    build-essential \
     python3-dev \
     libffi-dev \
-    bash
+    bash \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Create a virtual environment
 RUN python3 -m venv /usr/src/app/venv
+
 # Copy the rest of the application files
 COPY . .
+
 # Activate the virtual environment and install dependencies
 RUN /usr/src/app/venv/bin/pip install --no-cache-dir -r requirements.txt
-
-
 
 # Make start.sh executable
 RUN chmod +x start.sh

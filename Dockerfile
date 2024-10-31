@@ -4,7 +4,7 @@ FROM debian:bookworm-slim
 # Set the working directory
 WORKDIR /usr/src/app
 
-# Install necessary packages and build dependencies
+# Install necessary packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-venv \
@@ -14,9 +14,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     python3-dev \
     libffi-dev \
+    procps \
     bash \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
 
 # Create a virtual environment
 RUN python3 -m venv /usr/src/app/venv

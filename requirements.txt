@@ -5,5 +5,4 @@ pyrofork
 python-dotenv
 pytz
 TgCrypto
-shutil
 psutil

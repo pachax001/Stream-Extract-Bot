@@ -1,7 +1,7 @@
 import os
 import time
 import asyncio
-
+from helpers.logger import logger
 
 PRGRS = {}
 ACTIVE_DOWNLOADS = {}
@@ -25,7 +25,7 @@ async def progress_func(
         elapsed_time_str = TimeFormatter(milliseconds=elapsed_time)
         estimated_total_time_str = TimeFormatter(milliseconds=estimated_total_time)
         unique_id = f"{message.chat.id}_{message.id}_{ud_type}"
-
+        logger.info(f"Progress for {unique_id}: {percentage}%")
         PRGRS[unique_id] = {
             "ud_type": ud_type,
             "current": humanbytes(current),

@@ -89,6 +89,9 @@ async def download_file(client, message):
         "user_id": message.from_user.id,
         "start_time": time.time()
     }
+        logger.info(f"Downloading {file_name} to server...")
+        logger.info(f"Current downloads: {CURRENT_DOWNLOADS}")
+        logger.info(f"Active downloads in download.py: {ACTIVE_DOWNLOADS}")
 
         try:
             msg = await client.send_message(

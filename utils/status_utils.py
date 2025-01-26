@@ -3,7 +3,7 @@
 import shutil
 import psutil
 from helpers.progress import ACTIVE_DOWNLOADS, PRGRS, humanbytes, ACTIVE_UPLOADS
-
+from helpers.logger import logger
 def get_status_text():
     """
     Builds a status string with:
@@ -17,6 +17,8 @@ def get_status_text():
     if not ACTIVE_DOWNLOADS:
         lines.append("**No downloads in progress.**\n")
     else:
+        logger.info("Building status text for downloads...")
+        logger.info(f"ACTIVE_DOWNLOADS: {ACTIVE_DOWNLOADS}")
         lines.append("**Ongoing Downloads**:")
         for unique_id, info in ACTIVE_DOWNLOADS.items():
             file_name = info.get("file_name", "UnknownFile")
@@ -37,6 +39,8 @@ def get_status_text():
                 )
             else:
                 # It's in ACTIVE_DOWNLOADS but not yet in PRGRS
+                logger.info(f"Unique ID {unique_id} not in PRGRS")
+                logger.info(f"ACTIVE_DOWNLOADS: {ACTIVE_DOWNLOADS}")
                 lines.append(f"• **{file_name}**\n  - Progress: Initializing...\n")
         lines.append("")
     

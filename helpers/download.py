@@ -199,7 +199,8 @@ async def download_file(client, message):
                                 "location": download_location,
                                 "file_name": file_name,
                                 "user_id": user_id,
-                                "user_first_name": user_first_name
+                                "user_first_name": user_first_name,
+                                "ud_type": "download"
                             }
                             buttons.append([
                                 InlineKeyboardButton(

@@ -103,6 +103,7 @@ async def download_file(client, message):
                 ]),
                 reply_to_message_id=media.id
             )
+            callback_unique_message_id = f"{msg.chat.id}_{msg.message_id}_callback"
         except Exception as e:
             logger.error(f"Error while sending message: {e}")
             await message.reply_text("Some error occurred. Please try again later.")
@@ -246,3 +247,5 @@ async def download_file(client, message):
             del ACTIVE_DOWNLOADS[unique_id]
         if unique_id in PRGRS:
             del PRGRS[unique_id]
+        if callback_unique_message_id in PRGRS_CALLBACK:
+            del PRGRS_CALLBACK[callback_unique_message_id]

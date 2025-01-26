@@ -24,7 +24,7 @@ async def upload_audio(client, message, file_loc, username, userid, file_name):
     msg = await message.edit_text(
         text="**Uploading extracted stream...**",
         reply_markup=InlineKeyboardMarkup(
-            [[InlineKeyboardButton(text="Progress", callback_data="progress_msg")]])
+            [[InlineKeyboardButton(text="Progress", callback_data="progress_msg_upload")]])
     )
 
     title = None
@@ -112,7 +112,7 @@ async def upload_subtitle(client, message, file_loc,username,userid,file_name):
     msg = await message.edit_text(
         text="**Uploading extracted subtitle...**",
         reply_markup=InlineKeyboardMarkup(
-            [[InlineKeyboardButton(text="Progress", callback_data="progress_msg")]])
+            [[InlineKeyboardButton(text="Progress", callback_data="progress_msg_upload")]])
     )
 
     c_time = time.time() 

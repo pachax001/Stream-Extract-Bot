@@ -95,7 +95,7 @@ async def download_file(client, message):
                 chat_id=message.chat.id,
                 text=f"**Downloading {file_name} to server...**",
                 reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton(text="Check Progress", callback_data="progress_msg")]
+                    [InlineKeyboardButton(text="Check Progress", callback_data="progress_msg_download")]
                 ]),
                 reply_to_message_id=media.id
             )
@@ -200,7 +200,7 @@ async def download_file(client, message):
                                 "file_name": file_name,
                                 "user_id": user_id,
                                 "user_first_name": user_first_name,
-                                "ud_type": "download"
+                                
                             }
                             buttons.append([
                                 InlineKeyboardButton(

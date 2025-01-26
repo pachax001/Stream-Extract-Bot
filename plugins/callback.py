@@ -70,6 +70,7 @@ async def cb_handler(client, query):
 
     elif query.data == "progress_msg":
         unique_id = f"{query.message.chat.id}_{query.message.id}_download"
+        logger.info(f"Progress for in callback main {unique_id}: {PRGRS[unique_id]}")
         try:
             msg = "Progress Details...\n\nCompleted : {current}\nTotal Size : {total}\nSpeed : {speed}\nProgress : {progress:.2f}%\nElapsed Time : {elapsed}\nETA: {eta}"
             ud_type = DATA['ud_type']
@@ -81,7 +82,8 @@ async def cb_handler(client, query):
                 ),
                 show_alert=True
             )
-        except:
+        except Exception as e:
+            logger.error(f"Error while getting progress: {e}")
             logger.info(f"Progress for in callback {unique_id}: {PRGRS[unique_id]}")
             await query.answer(
                 "Processing your file...",

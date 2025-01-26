@@ -3,7 +3,7 @@ import json
 import shutil
 from pyrogram import Client as trojanz
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from helpers.progress import progress_func, ACTIVE_DOWNLOADS,PRGRS
+from helpers.progress import progress_func, ACTIVE_DOWNLOADS,PRGRS,PRGRS_CALLBACK
 from helpers.tools import execute, clean_up
 from helpers.logger import logger
 from config import Config
@@ -125,7 +125,7 @@ async def download_file(client, message):
                         original_message
                     )
                 )
-                
+
                 if download_location:
                     downloaded_file_size = humanbytes(os.path.getsize(download_location))
                     logger.info(f"Downloaded file size: {downloaded_file_size}")

@@ -3,6 +3,7 @@
 import asyncio
 from pyrogram.errors import MessageNotModified, FloodWait, MessageIdInvalid
 from utils.status_utils import get_status_text
+from helpers.progress import ACTIVE_DOWNLOADS, ACTIVE_UPLOADS
 
 async def keep_updating_status(client, chat_id, message_id, stop_event=None):
     """
@@ -12,6 +13,13 @@ async def keep_updating_status(client, chat_id, message_id, stop_event=None):
     while True:
         # Check if we have an external stop condition
         if stop_event and stop_event.is_set():
+            break
+
+        if not ACTIVE_DOWNLOADS and not ACTIVE_UPLOADS:
+            try:
+                await client.delete_messages(chat_id, message_id)
+            except MessageIdInvalid:
+                pass  # message may already have been deleted
             break
 
         try:

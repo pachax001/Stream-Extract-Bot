@@ -103,6 +103,7 @@ async def upload_audio(client, message, file_loc, username, userid, file_name):
 
 async def upload_subtitle(client, message, file_loc,username,userid,file_name):
     unique_id = f"{message.chat.id}_{message.id}_upload"
+    original_message = message
     ACTIVE_UPLOADS[unique_id] = {
         "file_name": file_name,
         "start_time": time.time(),
@@ -128,7 +129,8 @@ async def upload_subtitle(client, message, file_loc,username,userid,file_name):
             progress_args=(
                 "upload",
                 msg,
-                c_time
+                c_time,
+                original_message
             )
         )
     except Exception as e:
@@ -149,7 +151,8 @@ async def upload_subtitle(client, message, file_loc,username,userid,file_name):
             progress_args=(
                 "upload",
                 msg,
-                c_time
+                c_time,
+                original_message
             )
         )
     except Exception as e:

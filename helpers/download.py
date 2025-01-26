@@ -54,6 +54,7 @@ async def download_file(client, message):
         username = message.reply_to_message.from_user.username or "Unknown"
         full_name = message.reply_to_message.from_user.full_name or "Unknown"
         unique_id = f"{message.chat.id}_{message.id}_download"
+        original_message = message
 
         if media.empty:
             await message.reply_text('Why did you delete that?? 😕', True)
@@ -120,7 +121,8 @@ async def download_file(client, message):
                     progress_args=(
                        "download",
                         msg,
-                        c_time
+                        c_time,
+                        original_message
                     )
                 )
                 if download_location:

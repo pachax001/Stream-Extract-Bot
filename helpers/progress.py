@@ -11,7 +11,8 @@ async def progress_func(
     total,
     ud_type,
     message,
-    start
+    start,
+    original_message,
 ):
     now = time.time()
     diff = now - start
@@ -24,7 +25,7 @@ async def progress_func(
 
         elapsed_time_str = TimeFormatter(milliseconds=elapsed_time)
         estimated_total_time_str = TimeFormatter(milliseconds=estimated_total_time)
-        unique_id = f"{message.chat.id}_{message.id}_{ud_type}"
+        unique_id = f"{original_message.chat.id}_{original_message.id}_{ud_type}"
         logger.info(f"Progress for {unique_id}: {percentage}%")
         PRGRS[unique_id] = {
             "ud_type": ud_type,

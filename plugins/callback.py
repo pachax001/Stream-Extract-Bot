@@ -5,7 +5,7 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import Config
 from script import Script
 
-from helpers.progress import PRGRS
+from helpers.progress import PRGRS,PRGRS_CALLBACK
 from helpers.tools import clean_up
 from helpers.download import download_file, DATA
 from helpers.ffmpeg import extract_audio, extract_subtitle
@@ -84,7 +84,7 @@ async def cb_handler(client, query):
             logger.info(f"Progress for in callback {unique_id}: {PRGRS[unique_id]}")
             await query.answer(
                 msg.format(
-                    **PRGRS[unique_id]
+                    **PRGRS_CALLBACK[unique_id]
                 ),
                 show_alert=True
             )
@@ -105,7 +105,7 @@ async def cb_handler(client, query):
             logger.info(f"Progress for in callback {unique_id}: {PRGRS[unique_id]}")
             await query.answer(
                 msg.format(
-                    **PRGRS[unique_id]
+                    **PRGRS_CALLBACK[unique_id]
                 ),
                 show_alert=True
             )

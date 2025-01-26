@@ -125,6 +125,7 @@ async def download_file(client, message):
                         original_message
                     )
                 )
+                
                 if download_location:
                     downloaded_file_size = humanbytes(os.path.getsize(download_location))
                     logger.info(f"Downloaded file size: {downloaded_file_size}")

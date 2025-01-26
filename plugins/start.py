@@ -121,7 +121,7 @@ async def restart(client, message):
         await restartmsg.edit_text("Failed to restart the bot.")
 
 
-@trojanz.on_message(filters.command(["status"]) & filters.private & filters.user(Config.OWNER_ID))
+@trojanz.on_message(filters.command(["status"]) & filters.private & filters.user(int(Config.OWNER_ID)))
 async def status(client, message):
     status_text = get_status_text()
     await message.reply_text(status_text, parse_mode=ParseMode.MARKDOWN, reply_to_message_id=message.id)

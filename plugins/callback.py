@@ -72,7 +72,7 @@ async def cb_handler(client, query):
         unique_id = f"{query.message.chat.id}_{query.message.id}_download"
         #logger.info(f"Progress for in callback main {unique_id}: {PRGRS[unique_id]}")
         try:
-            if unique_id not in PRGRS:
+            if unique_id not in PRGRS_CALLBACK:
                 await query.answer(
                     "Processing your file...",
                     show_alert=True
@@ -99,6 +99,12 @@ async def cb_handler(client, query):
         unique_id = f"{query.message.chat.id}_{query.message.id}_upload"
         #logger.info(f"Progress for in callback main {unique_id}: {PRGRS[unique_id]}")
         try:
+            if unique_id not in PRGRS_CALLBACK:
+                await query.answer(
+                    "Processing your file...",
+                    show_alert=True
+                )
+                return
             msg = "Progress Details...\n\nCompleted : {current}\nTotal Size : {total}\nSpeed : {speed}\nProgress : {progress:.2f}%\nElapsed Time : {elapsed}\nETA: {eta}"
             #ud_type = DATA['ud_type']
             

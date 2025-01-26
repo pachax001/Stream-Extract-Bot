@@ -11,6 +11,7 @@ from helpers.logger import logger
 import asyncio
 from utils.status_utils import get_status_text
 from pyrogram.enums import ParseMode
+from helpers.message_updater import keep_updating_status
 @trojanz.on_message(filters.command(["start"]) & filters.private)
 async def start(client, message):
     await message.reply_text(
@@ -124,4 +125,5 @@ async def restart(client, message):
 @trojanz.on_message(filters.command(["status"]) & filters.private & filters.user(int(Config.OWNER_ID)))
 async def status(client, message):
     status_text = get_status_text()
-    await message.reply_text(status_text, parse_mode=ParseMode.MARKDOWN, reply_to_message_id=message.id)
+    sent_message = await message.reply_text(status_text, parse_mode=ParseMode.MARKDOWN, reply_to_message_id=message.id)
+    asyncio.create_task(keep_updating_status(client, sent_message.chat.id, sent_message.id))

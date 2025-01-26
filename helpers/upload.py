@@ -4,7 +4,7 @@ from hachoir.parser import createParser
 from hachoir.metadata import extractMetadata
 
 from helpers.tools import clean_up
-from helpers.progress import progress_func
+from helpers.progress import progress_func,ACTIVE_UPLOADS,PRGRS
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import Config
 from helpers.logger import logger
@@ -14,6 +14,12 @@ import asyncio
 LOG_CHANNEL = Config.LOG_CHANNEL
 BOT_USERNAME = Config.BOT_USERNAME
 async def upload_audio(client, message, file_loc, username, userid, file_name):
+    unique_id = f"{message.chat.id}_{message.id}_upload"
+    ACTIVE_UPLOADS[unique_id] = {
+        "file_name": file_name,
+        "start_time": time.time(),
+        "user_id": userid
+    }
     
     msg = await message.edit_text(
         text="**Uploading extracted stream...**",
@@ -49,7 +55,7 @@ async def upload_audio(client, message, file_loc, username, userid, file_name):
             duration=duration,
             progress=progress_func,
             progress_args=(
-                "**Uploading extracted stream...**",
+                "upload",
                 msg,
                 c_time
             )
@@ -74,7 +80,7 @@ async def upload_audio(client, message, file_loc, username, userid, file_name):
             duration=duration,
             progress=progress_func,
             progress_args=(
-                "**Uploading extracted stream...**",
+                "upload",
                 msg,
                 c_time
             )
@@ -84,6 +90,11 @@ async def upload_audio(client, message, file_loc, username, userid, file_name):
         await msg.edit_text(f"**Some Error Occurred While Sending {file_name} to Log Channel. See Logs for More Info.**")
         await clean_up(file_loc, None, file_loc)   
         return
+    finally:
+        if unique_id in ACTIVE_UPLOADS:
+            del ACTIVE_UPLOADS[unique_id]
+        if unique_id in PRGRS:
+            del PRGRS[unique_id]
 
     await msg.delete()
 
@@ -91,6 +102,12 @@ async def upload_audio(client, message, file_loc, username, userid, file_name):
 
 
 async def upload_subtitle(client, message, file_loc,username,userid,file_name):
+    unique_id = f"{message.chat.id}_{message.id}_upload"
+    ACTIVE_UPLOADS[unique_id] = {
+        "file_name": file_name,
+        "start_time": time.time(),
+        "user_id": userid
+    }
     
     msg = await message.edit_text(
         text="**Uploading extracted subtitle...**",
@@ -109,7 +126,7 @@ async def upload_subtitle(client, message, file_loc,username,userid,file_name):
             caption=f"Uploaded by {BOT_USERNAME}",
             progress=progress_func,
             progress_args=(
-                "**Uploading extracted subtitle...**",
+                "upload",
                 msg,
                 c_time
             )
@@ -130,7 +147,7 @@ async def upload_subtitle(client, message, file_loc,username,userid,file_name):
             caption=f"Extracted by: <a href='tg://user?id={userid}'>{username}</a>",
             progress=progress_func,
             progress_args=(
-                "**Uploading extracted subtitle...**",
+                "upload",
                 msg,
                 c_time
             )
@@ -139,6 +156,11 @@ async def upload_subtitle(client, message, file_loc,username,userid,file_name):
         logger.error(f"Error while uploading extracted subtitle from {file_name} to log channel: {e}")   
         await msg.edit_text(f"**Some Error Occurred while sending {file_name} to log channel. See Logs for More Info.**")   
         return
-
+    finally:
+        # Remove from ACTIVE_UPLOADS
+        if unique_id in ACTIVE_UPLOADS:
+            del ACTIVE_UPLOADS[unique_id]
+        if unique_id in PRGRS:
+            del PRGRS[unique_id]
     await msg.delete()
     await clean_up(file_loc, None, file_loc)        

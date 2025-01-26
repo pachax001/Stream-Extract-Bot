@@ -27,6 +27,9 @@ class Config(object):
     LOG_CHANNEL = os.environ.get("LOG_CHANNEL")
     LOG_MEDIA_CHANNEL = os.environ.get("LOG_MEDIA_CHANNEL")
     BOT_USERNAME = os.environ.get("BOT_USERNAME")
+    THRESHOLD = int(os.environ.get("THRESHOLD", 50))
+    MAX_DOWLOAD_LIMIT = int(os.environ.get("MAX_DOWLOAD_LIMIT", 5))
+
     if LOG_CHANNEL is None or LOG_CHANNEL == "":
         logger.info("LOG_CHANNEL environment variable is missing. Messages will not be logged.")
     else:
@@ -36,6 +39,6 @@ class Config(object):
         
 
     # Check if required environment variables are missing
-    MISSING_VARIABLES = [var for var in ["BOT_TOKEN", "APP_ID", "API_HASH",  "BOT_USERNAME", "OWNER_ID"] if os.environ.get(var) is None or os.environ.get(var) == ""]
+    MISSING_VARIABLES = [var for var in ["BOT_TOKEN", "APP_ID", "API_HASH",  "BOT_USERNAME", "OWNER_ID","THRESHOLD"] if os.environ.get(var) is None or os.environ.get(var) == ""]
     if MISSING_VARIABLES:
         raise ValueError(f"The following required environment variables are missing: {', '.join(MISSING_VARIABLES)}")

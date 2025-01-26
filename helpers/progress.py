@@ -4,7 +4,8 @@ import asyncio
 
 
 PRGRS = {}
-
+ACTIVE_DOWNLOADS = {}
+ACTIVE_UPLOADS = {} 
 async def progress_func(
     current,
     total,
@@ -23,11 +24,13 @@ async def progress_func(
 
         elapsed_time_str = TimeFormatter(milliseconds=elapsed_time)
         estimated_total_time_str = TimeFormatter(milliseconds=estimated_total_time)
+        unique_id = f"{message.chat.id}_{message.id}_{ud_type}"
 
-        PRGRS[f"{message.chat.id}_{message.id}"] = {
+        PRGRS[unique_id] = {
+            "ud_type": ud_type,
             "current": humanbytes(current),
             "total": humanbytes(total),
-            "speed": humanbytes(speed),
+            "speed": humanbytes(speed) + "/s",
             "progress": percentage,
             "elapsed": elapsed_time_str,
             "eta": estimated_total_time_str

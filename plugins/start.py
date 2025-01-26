@@ -9,6 +9,8 @@ import sys
 import subprocess
 from helpers.logger import logger
 import asyncio
+from utils.status_utils import get_status_text
+from pyrogram.enums import ParseMode
 @trojanz.on_message(filters.command(["start"]) & filters.private)
 async def start(client, message):
     await message.reply_text(
@@ -117,4 +119,9 @@ async def restart(client, message):
     except Exception as e:
         logger.error("Error in restart: %s", e)
         await restartmsg.edit_text("Failed to restart the bot.")
-    
+
+
+@trojanz.on_message(filters.command(["status"]) & filters.private & filters.user(Config.OWNER_ID))
+async def status(client, message):
+    status_text = get_status_text()
+    await message.reply_text(status_text, parse_mode=ParseMode.MARKDOWN, reply_to_message_id=message.id)

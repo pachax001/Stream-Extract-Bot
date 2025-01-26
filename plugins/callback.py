@@ -72,9 +72,10 @@ async def cb_handler(client, query):
         try:
             msg = "Progress Details...\n\nCompleted : {current}\nTotal Size : {total}\nSpeed : {speed}\nProgress : {progress:.2f}%\nElapsed Time : {elapsed}\nETA: {eta}"
             ud_type = DATA['ud_type']
+            unique_id = f"{query.message.chat.id}_{query.message.id}_download"
             await query.answer(
                 msg.format(
-                    **PRGRS[f"{query.message.chat.id}_{query.message.id}_{ud_type}"]
+                    **PRGRS[unique_id]
                 ),
                 show_alert=True
             )

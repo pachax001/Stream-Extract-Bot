@@ -4,6 +4,7 @@ import asyncio
 from pyrogram.errors import MessageNotModified, FloodWait, MessageIdInvalid
 from utils.status_utils import get_status_text
 from helpers.progress import ACTIVE_DOWNLOADS, ACTIVE_UPLOADS
+from helpers.logger import logger
 
 async def keep_updating_status(client, chat_id, message_id, stop_event=None):
     """
@@ -40,11 +41,11 @@ async def keep_updating_status(client, chat_id, message_id, stop_event=None):
             break
         except Exception as e:
             # Catch other unexpected exceptions and log or break
-            print(f"Unexpected error in keep_updating_status: {e}")
+            logger.error("Error in status updater", exc_info=True)
             break
 
         # Wait 10 seconds before next update
         await asyncio.sleep(10)
 
     # Optionally do a final cleanup or log something here
-    print("Stopped updating status.")
+    logger.info("Status updater loop ended")

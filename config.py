@@ -28,7 +28,7 @@ class Config(object):
     LOG_MEDIA_CHANNEL = os.environ.get("LOG_MEDIA_CHANNEL")
     BOT_USERNAME = os.environ.get("BOT_USERNAME")
     THRESHOLD = int(os.environ.get("THRESHOLD", 50))
-    MAX_DOWLOAD_LIMIT = int(os.environ.get("MAX_DOWLOAD_LIMIT", 5))
+    MAX_DOWLOAD_LIMIT = int(os.environ.get("MAX_DOWLOAD_LIMIT", 10))
 
     if LOG_CHANNEL is None or LOG_CHANNEL == "":
         logger.info("LOG_CHANNEL environment variable is missing. Messages will not be logged.")

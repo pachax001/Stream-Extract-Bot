@@ -15,7 +15,7 @@ import os
 
 MAX_DOWNLOAD_LIMIT = Config.MAX_DOWLOAD_LIMIT  # e.g., 3 for a maximum of 3 concurrent downloads
 CURRENT_DOWNLOADS = 0  # Global counter
-
+USER_DOWNLOADS = {}
 # Convert threshold from GB to bytes
 THRESHOLD_IN_BYTES = Config.THRESHOLD * 1024 * 1024 * 1024
 
@@ -34,7 +34,17 @@ DATA = {}
 
 async def download_file(client, message):
     global CURRENT_DOWNLOADS
-
+    user_id = message.reply_to_message.from_user.id
+    unique_id = f"{message.chat.id}_{message.id}_download"
+    if user_id not in USER_DOWNLOADS:
+            USER_DOWNLOADS[user_id] = 0
+    if USER_DOWNLOADS[user_id] >= MAX_DOWNLOAD_LIMIT:
+        await message.reply_text(
+            f"**You have reached your maximum concurrent downloads limit ({MAX_DOWNLOAD_LIMIT}).**\n"
+            "Please wait for your current downloads to finish before starting a new one."
+        )
+        return
+    USER_DOWNLOADS[user_id] += 1
     # 1) Check concurrency first
     if CURRENT_DOWNLOADS >= MAX_DOWNLOAD_LIMIT:
         await message.reply_text(
@@ -53,8 +63,8 @@ async def download_file(client, message):
         user_first_name = message.reply_to_message.from_user.first_name or "Unknown"
         username = message.reply_to_message.from_user.username or "Unknown"
         full_name = message.reply_to_message.from_user.full_name or "Unknown"
-        unique_id = f"{message.chat.id}_{message.id}_download"
         original_message = message
+        
 
         if media.empty:
             await message.reply_text('Why did you delete that?? 😕', True)
@@ -62,7 +72,7 @@ async def download_file(client, message):
 
         file_name = filetype.file_name if filetype else "unknown_file"
         originalfilesize = humanbytes(filetype.file_size) if filetype else 0
-        logger.info(f"Original file size: {originalfilesize}")
+        #logger.info(f"Original file size: {originalfilesize}")
 
         caption = (
             f"File Name: <code>{file_name}</code>\n"
@@ -76,7 +86,7 @@ async def download_file(client, message):
 
         # 2) Check free disk space before download
         total, used, free = shutil.disk_usage("/") 
-        logger.info(f"Free disk space: {humanbytes(free)}; Threshold: {humanbytes(THRESHOLD_IN_BYTES)}")
+        #logger.info(f"Free disk space: {humanbytes(free)}; Threshold: {humanbytes(THRESHOLD_IN_BYTES)}")
         
         if free < THRESHOLD_IN_BYTES:
             await message.reply_text(
@@ -90,9 +100,9 @@ async def download_file(client, message):
         "user_id": message.from_user.id,
         "start_time": time.time()
     }
-        logger.info(f"Downloading {file_name} to server...")
-        logger.info(f"Current downloads: {CURRENT_DOWNLOADS}")
-        logger.info(f"Active downloads in download.py: {ACTIVE_DOWNLOADS}")
+        #logger.info(f"Downloading {file_name} to server...")
+        #logger.info(f"Current downloads: {CURRENT_DOWNLOADS}")
+        #logger.info(f"Active downloads in download.py: {ACTIVE_DOWNLOADS}")
 
         try:
             msg = await client.send_message(
@@ -241,11 +251,15 @@ async def download_file(client, message):
         return
 
     finally:
+        USER_DOWNLOADS[user_id] -= 1
+        if USER_DOWNLOADS[user_id] < 0:
+            USER_DOWNLOADS[user_id] = 0  # Just a safety measure
         # Decrement the counter in a finally block so it happens even if an error occurs
         CURRENT_DOWNLOADS -= 1
         if unique_id in ACTIVE_DOWNLOADS:
             del ACTIVE_DOWNLOADS[unique_id]
         if unique_id in PRGRS:
             del PRGRS[unique_id]
+        callback_unique_message_id = f"{msg.chat.id}_{msg.id}_callback"
         if callback_unique_message_id in PRGRS_CALLBACK:
             del PRGRS_CALLBACK[callback_unique_message_id]

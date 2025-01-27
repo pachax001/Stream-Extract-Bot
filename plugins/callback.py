@@ -81,7 +81,7 @@ async def cb_handler(client, query):
             msg = "Progress Details...\n\nCompleted : {current}\nTotal Size : {total}\nSpeed : {speed}\nProgress : {progress:.2f}%\nElapsed Time : {elapsed}\nETA: {eta}"
             #ud_type = DATA['ud_type']
             
-            logger.info(f"Progress for in callback {unique_id}: {PRGRS_CALLBACK[unique_id]}")
+            #logger.info(f"Progress for in callback {unique_id}: {PRGRS_CALLBACK[unique_id]}")
             await query.answer(
                 msg.format(
                     **PRGRS_CALLBACK[unique_id]
@@ -90,7 +90,7 @@ async def cb_handler(client, query):
             )
         except Exception as e:
             logger.error(f"Error while getting progress: {e}")
-            logger.info(f"Progress for in callback {unique_id}: {PRGRS_CALLBACK[unique_id]}")
+            #logger.info(f"Progress for in callback {unique_id}: {PRGRS_CALLBACK[unique_id]}")
             await query.answer(
                 "Processing your file...",
                 show_alert=True
@@ -108,7 +108,7 @@ async def cb_handler(client, query):
             msg = "Progress Details...\n\nCompleted : {current}\nTotal Size : {total}\nSpeed : {speed}\nProgress : {progress:.2f}%\nElapsed Time : {elapsed}\nETA: {eta}"
             #ud_type = DATA['ud_type']
             
-            logger.info(f"Progress for in callback {unique_id}: {PRGRS_CALLBACK[unique_id]}")
+            #logger.info(f"Progress for in callback {unique_id}: {PRGRS_CALLBACK[unique_id]}")
             await query.answer(
                 msg.format(
                     **PRGRS_CALLBACK[unique_id]
@@ -117,7 +117,7 @@ async def cb_handler(client, query):
             )
         except Exception as e:
             logger.error(f"Error while getting progress: {e}")
-            logger.info(f"Progress for in callback {unique_id}: {PRGRS_CALLBACK[unique_id]}")
+            #logger.info(f"Progress for in callback {unique_id}: {PRGRS_CALLBACK[unique_id]}")
             await query.answer(
                 "Processing your file...",
                 show_alert=True

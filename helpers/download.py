@@ -9,7 +9,7 @@ from helpers.logger import logger
 from config import Config
 from helpers.progress import humanbytes
 from pyrogram.enums import ParseMode
-import pyrogram.errors as perrors
+from pyrogram.errors import MessageNotModified,UsernameNotModified, UserNotParticipant, UsernameNotOccupied
 import asyncio
 import os
 
@@ -173,7 +173,7 @@ async def download_file(client, message):
                                     parse_mode=ParseMode.HTML
                                 )
                                 await asyncio.sleep(5)
-                        except perrors.bad_request_400.UsernameNotOccupied:
+                        except UsernameNotOccupied:
                             pass
                         except Exception as e:
                             logger.error(f"Error while forwarding media to log channel: {e}")
@@ -236,13 +236,13 @@ async def download_file(client, message):
                         )
                         return
 
-            except perrors.MessageNotModified:
+            except MessageNotModified:
                 pass
             except Exception as e:
                 logger.error(f"Error while downloading {file_name}: {e}")
                 await msg.edit_text(f"Error while downloading {file_name}")
                 if download_location:
-                    clean_up(download_location, None, file_name)
+                    await clean_up(download_location, None, file_name)
                 return
 
         # If maximum retries exceeded

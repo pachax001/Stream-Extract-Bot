@@ -20,7 +20,7 @@ async def execute(cmnd: str) -> Tuple[str, str, int, int]:
                 process.pid)
     except Exception as e:
         logger.error(f"Error while executing command: {e}")
-        return ("", "", 1, 0)
+        return "", "", 1, 0
 
 async def clean_up(input1, input2=None, filename=None):
     retries = 3

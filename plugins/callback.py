@@ -1,3 +1,4 @@
+import asyncio
 from pyrogram import filters
 from pyrogram import Client as trojanz
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
@@ -10,40 +11,54 @@ from helpers.tools import clean_up
 from helpers.download import download_file, DATA
 from helpers.ffmpeg import extract_audio, extract_subtitle
 from helpers.logger import logger
-
+from pyrogram.errors import QueryIdInvalid
 @trojanz.on_callback_query()
 async def cb_handler(client, query):
 
     if query.data == "start_data":
-        await query.answer()
-        keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("HELP", callback_data="help_data"),
-                InlineKeyboardButton("ABOUT", callback_data="about_data")],
-            [InlineKeyboardButton("⭕️OWNER⭕️", url="https://t.me/gunaya001")]
-        ])
+        try:
+            await query.answer()
+            keyboard = InlineKeyboardMarkup([
+                [InlineKeyboardButton("HELP", callback_data="help_data"),
+                    InlineKeyboardButton("ABOUT", callback_data="about_data")],
+                [InlineKeyboardButton("⭕️OWNER⭕️", url="https://t.me/gunaya001")]
+            ])
 
-        await query.message.edit_text(
-            Script.START_MSG.format(query.from_user.mention),
-            reply_markup=keyboard,
-            disable_web_page_preview=True
-        )
-        return
+            await query.message.edit_text(
+                Script.START_MSG.format(query.from_user.mention),
+                reply_markup=keyboard,
+                disable_web_page_preview=True
+            )
+            return
+        except QueryIdInvalid:
+            logger.error("QueryIdInvalid: May be the bot was restarted")
+            return
+        except Exception as e:
+            logger.error(f"Error in start_data: {e}")
+            return
 
 
     elif query.data == "help_data":
-        await query.answer()
-        keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("BACK", callback_data="start_data"),
-                InlineKeyboardButton("ABOUT", callback_data="about_data")],
-            [InlineKeyboardButton("⭕️ SUPPORT ⭕️", url="https://t.me/gunaya001")]
-        ])
+        try:
+            await query.answer()
+            keyboard = InlineKeyboardMarkup([
+                [InlineKeyboardButton("BACK", callback_data="start_data"),
+                    InlineKeyboardButton("ABOUT", callback_data="about_data")],
+                [InlineKeyboardButton("⭕️ SUPPORT ⭕️", url="https://t.me/gunaya001")]
+            ])
 
-        await query.message.edit_text(
-            Script.HELP_MSG,
-            reply_markup=keyboard,
-            disable_web_page_preview=True
-        )
-        return
+            await query.message.edit_text(
+                Script.HELP_MSG,
+                reply_markup=keyboard,
+                disable_web_page_preview=True
+            )
+            return
+        except QueryIdInvalid:
+            logger.error("QueryIdInvalid: May be the bot was restarted")
+            return
+        except Exception as e:
+            logger.error(f"Error in help_data: {e}")
+            return
 
 
     elif query.data == "about_data":
@@ -63,9 +78,17 @@ async def cb_handler(client, query):
 
 
     elif query.data == "download_file":
-        await query.answer()
-        await query.message.delete()
-        await download_file(client, query.message)
+        try:
+            await query.answer()
+            await query.message.delete()
+            #await download_file(client, query.message)
+            asyncio.create_task(download_file(client, query.message))
+        except QueryIdInvalid:
+            logger.error("QueryIdInvalid: May be the bot was restarted")
+            return
+        except Exception as e:
+            logger.error(f"Error in download_file: {e}")
+            return
 
 
     elif query.data == "progress_msg_download":
@@ -88,6 +111,9 @@ async def cb_handler(client, query):
                 ),
                 show_alert=True
             )
+        except QueryIdInvalid:
+            logger.error("QueryIdInvalid: May be the bot was restarted")
+            return
         except Exception as e:
             logger.error(f"Error while getting progress: {e}")
             #logger.info(f"Progress for in callback {unique_id}: {PRGRS_CALLBACK[unique_id]}")
@@ -115,6 +141,9 @@ async def cb_handler(client, query):
                 ),
                 show_alert=True
             )
+        except QueryIdInvalid:
+            logger.error("QueryIdInvalid: May be the bot was restarted")
+            return
         except Exception as e:
             logger.error(f"Error while getting progress: {e}")
             #logger.info(f"Progress for in callback {unique_id}: {PRGRS_CALLBACK[unique_id]}")
@@ -133,22 +162,30 @@ async def cb_handler(client, query):
 
 
     elif query.data.startswith('audio'):
-        await query.answer()
+
         try:
+            await query.answer()
             stream_type, mapping, keyword = query.data.split('_')
             data = DATA[keyword][int(mapping)]
             await extract_audio(client, query.message, data)
+        except QueryIdInvalid:
+            logger.error("QueryIdInvalid: May be the bot was restarted")
+            return
         except Exception as e:
             await query.message.edit_text("**Details Not Found**")
             logger.error(f"Error while extracting audio: {e}")   
 
 
     elif query.data.startswith('subtitle'):
-        await query.answer()
+
         try:
+            await query.answer()
             stream_type, mapping, keyword = query.data.split('_')
             data = DATA[keyword][int(mapping)]
             await extract_subtitle(client, query.message, data)
+        except QueryIdInvalid:
+            logger.error("QueryIdInvalid: May be the bot was restarted")
+            return
         except Exception as e:
             await query.message.edit_text("**Details Not Found**")
             logger.error(f"Error while extracting subtitle: {e}")  

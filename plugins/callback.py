@@ -96,11 +96,14 @@ async def callback_handler(client: Client, query: CallbackQuery) -> None:
     # ------- STREAM EXTRACTION -------
     if data.startswith(('audio_', 'subtitle_')):
         try:
-            stream_type, idx, key = data.split('_', 2)
+            stream_type, idx_s, key = data.split('_', 2)
+            #idx = int(idx_s)
+            bucket = download_progress.get(key,{})
+
             # key was message_chat-message_id
-            entry: Dict[str, Any] = download_progress.get(key) or {}
-            stream_data = entry.get('map') is not None and entry
-            if not stream_data:
+            #entry: Dict[str, Any] = download_progress.get(key) or {}
+            entry = bucket.get(idx_s)
+            if not entry:
                 await query.message.edit_text("**Details Not Found**")
                 return
             if stream_type == 'audio':

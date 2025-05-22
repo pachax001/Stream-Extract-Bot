@@ -23,6 +23,10 @@ def keep_updating_status(
     """
     async def _updater() -> None:
         while True:
+            if not download_progress and not upload_progress:
+                await client.delete_messages(chat_id, message_id)
+                break
+
             # External stop condition
             if stop_event and stop_event.is_set():
                 break

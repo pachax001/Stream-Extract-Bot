@@ -10,6 +10,7 @@ from pyrogram.enums import ParseMode
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
 
 from config import Config
+from helpers.progress import download_progress, upload_progress
 from script import Script
 from helpers.logger import logger
 from utils.status_utils import get_status_text
@@ -19,7 +20,7 @@ from helpers.tools import clean_up
 # Paths
 DOWNLOADS_DIR = Path("downloads")
 RESTART_FILE = Path("restart_msg_id.txt")
-
+_last_status: dict[int, int] = {}
 
 @Client.on_message(filters.command("start") & filters.private)
 async def start_command(client: Client, message: Message) -> None:
@@ -140,12 +141,33 @@ async def restart_command(client: Client, message: Message) -> None:
 
 @Client.on_message(filters.command("status") & filters.private & filters.user(Config.OWNER_ID))
 async def status_command(client: Client, message: Message) -> None:
-    """
-    Handle /status: send a status report and update it periodically.
-    """
+    user_id = message.from_user.id
+
+    # Delete old status message if we have one
+    old_msg_id = _last_status.get(user_id)
+    if old_msg_id:
+        try:
+            await client.delete_messages(chat_id=message.chat.id, message_ids=old_msg_id)
+        except:
+            pass
+
+    # Compose status
     report = get_status_text(mount_point=str(Path.cwd()))
-    status_msg = await message.reply_text(
-        report,
-        parse_mode=ParseMode.MARKDOWN
-    )
+    status_msg = await message.reply_text(report, parse_mode=ParseMode.MARKDOWN)
+
+    # Remember it
+    _last_status[user_id] = status_msg.id
+
+    # If no transfers at all, auto-delete after 5s
+    if not download_progress and not upload_progress:
+        await asyncio.sleep(5)
+        try:
+            await status_msg.delete()
+        except:
+            pass
+        # clear our record
+        _last_status.pop(user_id, None)
+        return
+
+    # Otherwise, spin up the periodic updater
     keep_updating_status(client, status_msg.chat.id, status_msg.id)

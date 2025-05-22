@@ -167,23 +167,40 @@ async def _forward_to_log(
     fname: str
 ) -> None:
     """
-    Copy the downloaded media to the log channel.
+    Copy the downloaded media to the log channel, annotating it
+    with the downloader’s username, user ID, and profile link.
     """
     if not LOG_CHANNEL:
         return
+
+    # Extract user info
+    user = media.from_user
+    uid = user.id
+    # Fallback to first name if no username
+    uname = user.username or user.first_name or "Unknown"
+    # Telegram profile link
+    profile_link = f"tg://user?id={uid}"
+
+    # Build rich caption
+    caption = (
+        f"<b>Downloaded:</b> {fname}\n"
+        f"<b>By:</b> <a href=\"{profile_link}\">{uname}</a> (`{uid}`)"
+    )
+
     try:
         await asyncio.sleep(0.3)
         await client.copy_message(
             chat_id=int(LOG_CHANNEL),
             from_chat_id=media.chat.id,
             message_id=media.id,
-            caption=f"<b>Downloaded:</b> {fname}",
+            caption=caption,
             parse_mode=ParseMode.HTML
         )
     except UsernameNotOccupied:
         logger.info("Log channel invalid; skipping log copy.")
     except Exception as e:
         logger.error(f"_forward_to_log failed: {e}")
+
 
 
 async def _probe_and_ask_streams(

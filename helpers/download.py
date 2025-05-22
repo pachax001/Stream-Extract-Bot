@@ -45,7 +45,7 @@ async def download_file(client: Client, message: Message) -> None:
         if _user_download_counts[user_id] >= MAX_DOWNLOADS_PER_USER:
             await message.reply_text(f"⚠️ You already have {MAX_DOWNLOADS_PER_USER} active downloads.")
             return
-        if len(_active_downloads) >= MAX_DOWNLOADS_PER_USER:
+        if len(_active_downloads) >= int(MAX_DOWNLOADS_PER_USER)*5:
             await message.reply_text(f"⚠️ Server busy with {len(_active_downloads)} downloads. Please try later.")
             return
         _user_download_counts[user_id] += 1

@@ -9,7 +9,7 @@ from config import Config
 
 # Constants
 RESTART_FILE = Path("restart_msg_id.txt")
-VERSION = "v1.1.0.m"
+VERSION = "v1.1.1.m"
 TIMEZONE = pytz.timezone("Asia/Kolkata")
 
 async def edit_restart_message(app: Client) -> None:

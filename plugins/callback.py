@@ -4,7 +4,6 @@ from typing import Any, Dict
 from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.errors import QueryIdInvalid
-
 from config import Config
 from script import Script
 from helpers.tools import clean_up
@@ -64,8 +63,8 @@ async def callback_handler(client: Client, query: CallbackQuery) -> None:
         registry = callback_progress
         entry = registry.get(prog_key)
         if not entry:
-            await query.answer("Processing...", show_alert=True)
-            return
+            return await query.answer("Processing...", show_alert=True)
+
         msg = (
             "Progress Details...\n\n"
             "Completed: {current}\n"
@@ -76,7 +75,7 @@ async def callback_handler(client: Client, query: CallbackQuery) -> None:
             "ETA: {eta}"
         )
         try:
-            await query.answer(msg.format(**entry), show_alert=True)
+            return await query.answer(msg.format(**entry), show_alert=True)
         except Exception:
             await query.answer("Processing...", show_alert=True)
         return

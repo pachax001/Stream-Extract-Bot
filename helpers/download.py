@@ -82,6 +82,7 @@ async def download_file(client: Client, message: Message) -> None:
         # mark callback tracking
         key = f"{op_msg.chat.id}_{op_msg.id}_callback"
         callback_progress[key] = {
+            "file_name": fname,
             "current": "0 B",
             "total": nice_size,
             "speed": "0 B/s",

@@ -81,6 +81,7 @@ async def progress_func(
     eta_ms = ((total - current) / speed * 1000) if speed > 0 else 0
 
     record = {
+        "file_name": original_message.document.file_name if ud_type == "dl" and original_message.document else "<unknown>",
         "ud_type": ud_type,
         "current": human_readable_bytes(current),
         "total": human_readable_bytes(total),

@@ -230,13 +230,14 @@ async def _probe_and_ask_streams(
         for stream in info.get("streams", []):
             t = stream.get("codec_type")
             if t in {"audio", "subtitle"}:
-                idx = stream.get("index")
+                idx = stream["index"]
                 lang = stream.get("tags", {}).get("language", "und")
-                callback_data = f"{t}_{idx}_{key}"
+                name = stream.get("codec_name", t)  # e.g. "aac", "mp3", "subrip"
+                cb = f"{t}_{idx}_{key}"
                 buttons.append([
-                    InlineKeyboardButton(f"{t.upper()} {lang}", callback_data=callback_data)
+                    InlineKeyboardButton(f"{t.upper()} {lang}", callback_data=cb)
                 ])
-                download_progress[key] = {"map": idx, "file": str(path),"location":str(path),"file_name":fname,"user_id":original_msg.from_user.id,"user_first_name":original_msg.from_user.first_name or "<unknown>"}
+                download_progress[key] = {"map": idx, "file": str(path),"location":str(path),"file_name":fname,"user_id":original_msg.from_user.id,"user_first_name":original_msg.from_user.first_name or "<unknown>", "name": name, }
 
         buttons.append([InlineKeyboardButton("CANCEL", f"cancel_{key}")])
         await status_msg.edit_text(

@@ -52,7 +52,7 @@ async def _extract_and_upload(
 
     logger.info(f"User {user_id}:{user_name} extracting {file_ext} (stream {stream_map}) from {filename}")
     await message.edit_text(f"⏳ Extracting {file_ext.upper()} from **{filename}**…")
-
+    codec_name = data.get("name", "").lower()
     # Build FFmpeg command
     cmd = [
         "ffmpeg", "-y",
@@ -60,11 +60,13 @@ async def _extract_and_upload(
         "-map", f"0:{stream_map}",
     ]
 
-    if file_ext == "mp3":
-        # Re-encode audio to MP3
+    if file_ext == "mp3" and codec_name == "mp3":
+        cmd += ["-c", "copy"]
+    elif file_ext == "mp3":
+        # re-encode everything else into mp3
         cmd += ["-c:a", "libmp3lame", "-b:a", "192k"]
     else:
-        # Copy subtitles directly
+        # subtitles always get copied
         cmd += ["-c", "copy"]
 
     cmd.append(str(output_path))

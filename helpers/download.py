@@ -94,7 +94,7 @@ async def download_file(client: Client, message: Message) -> None:
         await _forward_to_log(client, media, fname)
 
         # Probe streams and prompt user
-        await _probe_and_ask_streams(client, download_path, fname, op_msg)
+        await _probe_and_ask_streams(client, download_path, fname, op_msg, message)
 
     except Exception:
         logger.exception("download_file: unexpected error")
@@ -181,7 +181,8 @@ async def _probe_and_ask_streams(
     client: Client,
     path: Path,
     fname: str,
-    status_msg: Message
+    status_msg: Message,
+    original_msg: Message,
 ) -> None:
     """
     Run ffprobe to list audio/subtitle streams and prompt user to select one.
@@ -209,7 +210,7 @@ async def _probe_and_ask_streams(
                 buttons.append([
                     InlineKeyboardButton(f"{t.upper()} {lang}", callback_data=callback_data)
                 ])
-                download_progress[key] = {"map": idx, "file": str(path)}
+                download_progress[key] = {"map": idx, "file": str(path),"location":str(path),"file_name":fname,"user_id":original_msg.from_user.id,"user_first_name":original_msg.from_user.first_name or "<unknown>"}
 
         buttons.append([InlineKeyboardButton("CANCEL", f"cancel_{key}")])
         await status_msg.edit_text(

@@ -53,7 +53,7 @@ async def download_file(client: Client, message: Message) -> None:
 
     try:
         # Validate replied media
-        media = message.reply_to_message
+        media = message
         if not media or not (media.document or media.video):
             await message.reply_text("⚠️ Please reply to a valid media file.")
             return

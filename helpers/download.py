@@ -75,7 +75,7 @@ async def download_file(client: Client, message: Message) -> None:
             text=f"▶️ Downloading **{fname}** ({nice_size})...",
             reply_to_message_id=media.id,
             reply_markup=InlineKeyboardMarkup(
-                [[InlineKeyboardButton("Check Progress", callback_data="progress_dl")]]
+                [[InlineKeyboardButton("Check Progress", callback_data="progress_msg_download")]]
             ),
             parse_mode=ParseMode.MARKDOWN
         )
@@ -205,8 +205,9 @@ async def _probe_and_ask_streams(
             if t in {"audio", "subtitle"}:
                 idx = stream.get("index")
                 lang = stream.get("tags", {}).get("language", "und")
+                callback_data = f"{t}_{idx}_{key}"
                 buttons.append([
-                    InlineKeyboardButton(f"{t.upper()} {lang}", f"map_{idx}_{key}")
+                    InlineKeyboardButton(f"{t.upper()} {lang}", callback_data=callback_data)
                 ])
                 download_progress[key] = {"map": idx, "file": str(path)}
 

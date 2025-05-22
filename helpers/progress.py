@@ -97,4 +97,4 @@ async def progress_func(
     callback_key = f"{message.chat.id}_{message.id}_callback"
     callback_progress[callback_key] = record
 
-    logger.info(f"[progress] {ud_type} {progress_pct:.2f}% ({key})")
+    #logger.info(f"[progress] {ud_type} {progress_pct:.2f}% ({key})")

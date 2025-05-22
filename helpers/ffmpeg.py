@@ -84,7 +84,7 @@ async def _extract_and_upload(
         client, message,
         file_loc=str(output_path),
         username=user_name,
-        userid=user_id,
+        user_id=user_id,
         file_name=filename
     )
 

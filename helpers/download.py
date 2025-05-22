@@ -80,7 +80,15 @@ async def download_file(client: Client, message: Message) -> None:
             parse_mode=ParseMode.MARKDOWN
         )
         # mark callback tracking
-        callback_progress[f"{op_msg.chat.id}_{op_msg.id}_callback"] = {}
+        key = f"{op_msg.chat.id}_{op_msg.id}_callback"
+        callback_progress[key] = {
+            "current": "0 B",
+            "total": nice_size,
+            "speed": "0 B/s",
+            "progress": 0.0,
+            "elapsed": "0ms",
+            "eta": "calculating"
+        }
 
         # Download media with retry logic
         download_path = await _download_with_retries(

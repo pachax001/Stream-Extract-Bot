@@ -227,6 +227,7 @@ async def _probe_and_ask_streams(
         info = json.loads(out)
         buttons = []
         key = f"{status_msg.chat.id}-{status_msg.id}"
+        download_progress[key] = {}
         for stream in info.get("streams", []):
             t = stream.get("codec_type")
             if t in {"audio", "subtitle"}:

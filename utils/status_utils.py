@@ -1,94 +1,86 @@
-# status_utils.py
-
 import shutil
 import psutil
-from helpers.progress import ACTIVE_DOWNLOADS, PRGRS, humanbytes, ACTIVE_UPLOADS
+from pathlib import Path
+from typing import Any, Dict, List
+
+from helpers.progress import download_progress, upload_progress
 from helpers.logger import logger
-def get_status_text():
-    """
-    Builds a status string with:
-      - Ongoing downloads from ACTIVE_DOWNLOADS/PRGRS
-      - Disk usage
-      - CPU/RAM usage (via psutil)
-    """
-    lines = []
 
-    # 1) Ongoing downloads
-    if not ACTIVE_DOWNLOADS:
+
+def _format_transfer_section(
+    title: str,
+    progress_registry: Dict[str, Dict[str, Any]]
+) -> List[str]:
+    """
+    Format a section showing ongoing transfers (downloads or uploads) from a progress registry.
+    """
+    lines: List[str] = [f"**{title}**:"]
+    for uid, info in progress_registry.items():
+        name = info.get("file_name", "UnknownFile")
+        current = info.get("current", "0 B")
+        total = info.get("total", "0 B")
+        pct = info.get("progress", 0.0)
+        speed = info.get("speed", "N/A")
+        eta = info.get("eta", "N/A")
+
+        lines.append(
+            f"• **{name}**  `[{current}/{total}]` ({pct:.2f}%)  "
+            f"Speed: {speed}  ETA: {eta}"
+        )
+    lines.append("")  # blank line for spacing
+    return lines
+
+
+def get_status_text(mount_point: str = "/") -> str:
+    """
+    Returns a multi-line status report including:
+      - Ongoing downloads
+      - Ongoing uploads
+      - Disk usage on `mount_point`
+      - CPU & RAM utilization
+    """
+    lines: List[str] = []
+
+    # Downloads
+    if download_progress:
+        logger.info("Reporting active downloads")
+        lines.extend(_format_transfer_section("Ongoing Downloads", download_progress))
+    else:
         lines.append("**No downloads in progress.**\n")
-    else:
-        logger.info("Building status text for downloads...")
-        logger.info(f"ACTIVE_DOWNLOADS: {ACTIVE_DOWNLOADS}")
-        lines.append("**Ongoing Downloads**:")
-        for unique_id, info in ACTIVE_DOWNLOADS.items():
-            file_name = info.get("file_name", "UnknownFile")
 
-            # Check if we have progress info for this unique_id
-            if unique_id in PRGRS:
-                prg = PRGRS[unique_id]
-                current = prg["current"]
-                total = prg["total"]
-                pct = prg["progress"]
-                speed = prg["speed"]
-                eta = prg["eta"]
-                lines.append(
-                    f"• **{file_name}**\n"
-                    f"  - Progress: {current}/{total} ({pct:.2f}%)\n"
-                    f"  - Speed: {speed}\n"
-                    f"  - ETA: {eta}\n"
-                )
-            else:
-                # It's in ACTIVE_DOWNLOADS but not yet in PRGRS
-                logger.info(f"Unique ID {unique_id} not in PRGRS")
-                logger.info(f"ACTIVE_DOWNLOADS: {ACTIVE_DOWNLOADS}")
-                lines.append(f"• **{file_name}**\n  - Progress: Initializing...\n")
-        lines.append("")
-    
-    if not ACTIVE_UPLOADS:
+    # Uploads
+    if upload_progress:
+        logger.info("Reporting active uploads")
+        lines.extend(_format_transfer_section("Ongoing Uploads", upload_progress))
+    else:
         lines.append("**No uploads in progress.**\n")
-    else:
-        lines.append("**Ongoing Uploads**:")
-        for unique_id, info in ACTIVE_UPLOADS.items():
-            file_name = info.get("file_name", "UnknownFile")
 
-            # Check if we have progress info for this unique_id
-            if unique_id in PRGRS:
-                prg = PRGRS[unique_id]
-                current = prg["current"]
-                total = prg["total"]
-                pct = prg["progress"]
-                speed = prg["speed"]
-                eta = prg["eta"]
-                lines.append(
-                    f"• **{file_name}**\n"
-                    f"  - Progress: {current}/{total} ({pct:.2f}%)\n"
-                    f"  - Speed: {speed}\n"
-                    f"  - ETA: {eta}\n"
-                )
-            else:
-                # It's in ACTIVE_DOWNLOADS but not yet in PRGRS
-                lines.append(f"• **{file_name}**\n  - Progress: Initializing...\n")
-        lines.append("")
-    # 2) Disk usage
-    total, used, free = shutil.disk_usage("/")
-    total_gb = total / (1024**3)
-    used_gb = used / (1024**3)
-    free_gb = free / (1024**3)
+    # Disk usage
+    try:
+        total, used, free = shutil.disk_usage(mount_point)
+        total_gb, used_gb, free_gb = (v / (1024**3) for v in (total, used, free))
+        lines.extend([
+            "**Disk Usage**:",
+            f"• Total: `{total_gb:.2f} GB`",
+            f"• Used:  `{used_gb:.2f} GB`",
+            f"• Free:  `{free_gb:.2f} GB`",
+            ""
+        ])
+    except Exception as e:
+        logger.error(f"Failed to get disk usage for {mount_point}: {e}")
+        lines.append("**Disk Usage**: unavailable\n")
 
-    lines.append(
-        f"**Disk Usage**:\n"
-        f"• Total: `{total_gb:.2f} GB`\n"
-        f"• Used:  `{used_gb:.2f} GB`\n"
-        f"• Free:  `{free_gb:.2f} GB`\n"
-    )
-
-    # 3) CPU & RAM usage
-    cpu_percent = psutil.cpu_percent(interval=0)
-    ram_info = psutil.virtual_memory()
-    lines.append(
-        f"**System Usage**:\n"
-        f"• CPU Usage: `{cpu_percent}%`\n"
-        f"• RAM Usage: `{ram_info.percent}%`\n"
-    )
+    # CPU & RAM
+    try:
+        cpu = psutil.cpu_percent(interval=0.1)
+        ram = psutil.virtual_memory().percent
+        lines.extend([
+            "**System Usage**:",
+            f"• CPU Usage: `{cpu:.1f}%`",
+            f"• RAM Usage: `{ram:.1f}%`"
+        ])
+    except Exception as e:
+        logger.error(f"Failed to get system usage: {e}")
+        lines.append("**System Usage**: unavailable")
 
     return "\n".join(lines)

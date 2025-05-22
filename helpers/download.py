@@ -1,265 +1,222 @@
-import time
+import asyncio
 import json
 import shutil
-from pyrogram import Client as trojanz
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from helpers.progress import progress_func, ACTIVE_DOWNLOADS,PRGRS,PRGRS_CALLBACK
-from helpers.tools import execute, clean_up
-from helpers.logger import logger
-from config import Config
-from helpers.progress import humanbytes
+from pathlib import Path
+from typing import Optional, Dict, Any
+
+from pyrogram import Client
 from pyrogram.enums import ParseMode
-from pyrogram.errors import MessageNotModified,UsernameNotModified, UserNotParticipant, UsernameNotOccupied
-import asyncio
-import os
+from pyrogram.errors import MessageNotModified, UsernameNotOccupied
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
 
-MAX_DOWNLOAD_LIMIT = Config.MAX_DOWLOAD_LIMIT  # e.g., 3 for a maximum of 3 concurrent downloads
-CURRENT_DOWNLOADS = 0  # Global counter
-USER_DOWNLOADS = {}
-# Convert threshold from GB to bytes
-THRESHOLD_IN_BYTES = Config.THRESHOLD * 1024 * 1024 * 1024
+from config import Config
+from helpers.logger import logger
+from helpers.progress import progress_func, download_progress, callback_progress
+from helpers.tools import execute, clean_up
 
-LOG_MEDIA_CHANNEL = Config.LOG_MEDIA_CHANNEL
-LOG_CHANNEL = Config.LOG_CHANNEL
-LOG_MODE = False
-if LOG_MEDIA_CHANNEL  is None or LOG_MEDIA_CHANNEL == "":
-    LOG_MEDIA_CHANNEL = LOG_CHANNEL
-    LOG_MODE = True
-else:
-    LOG_MEDIA_CHANNEL = LOG_MEDIA_CHANNEL
-    LOG_MODE = True
+# --- Configuration & Shared State ---
+MAX_DOWNLOADS_PER_USER = Config.MAX_DOWNLOAD_LIMIT
+THRESHOLD_BYTES = Config.THRESHOLD * 1024 ** 3
+MOUNT_POINT = Path(Config.MOUNT_POINT)
+LOG_CHANNEL = Config.LOG_MEDIA_CHANNEL or Config.LOG_CHANNEL
 
-DATA = {}
+_LOCK = asyncio.Lock()
+_user_download_counts: Dict[int, int] = {}
+_active_downloads: Dict[str, Any] = {}
 
 
-async def download_file(client, message):
-    global CURRENT_DOWNLOADS
-    user_id = message.reply_to_message.from_user.id
-    unique_id = f"{message.chat.id}_{message.id}_download"
-    if user_id not in USER_DOWNLOADS:
-            USER_DOWNLOADS[user_id] = 0
-    if USER_DOWNLOADS[user_id] >= MAX_DOWNLOAD_LIMIT:
-        await message.reply_text(
-            f"**You have reached your maximum concurrent downloads limit ({MAX_DOWNLOAD_LIMIT}).**\n"
-            "Please wait for your current downloads to finish before starting a new one."
-        )
-        return
-    USER_DOWNLOADS[user_id] += 1
-    # 1) Check concurrency first
-    if CURRENT_DOWNLOADS >= MAX_DOWNLOAD_LIMIT:
-        await message.reply_text(
-            f"**Concurrent Download Limit Reached**\n\n"
-            f"We already have {CURRENT_DOWNLOADS} downloads in progress.\n"
-            f"Please wait or try again later."
-        )
-        return
+async def download_file(client: Client, message: Message) -> None:
+    """
+    Handle a user's download request:
+      1. Enforce per-user and global download limits
+      2. Validate media and disk space
+      3. Download with retries and progress tracking
+      4. Forward to log channel
+      5. Probe streams and prompt user for extraction
+    """
+    user_id = message.from_user.id
+    op_msg: Optional[Message] = None
+    download_path: Optional[Path] = None
+    unique_key = f"{message.chat.id}_{message.id}_dl"
 
-    # Otherwise, we can proceed
-    CURRENT_DOWNLOADS += 1
+    # Reserve a download slot
+    async with _LOCK:
+        _user_download_counts.setdefault(user_id, 0)
+        if _user_download_counts[user_id] >= MAX_DOWNLOADS_PER_USER:
+            await message.reply_text(f"⚠️ You already have {MAX_DOWNLOADS_PER_USER} active downloads.")
+            return
+        if len(_active_downloads) >= MAX_DOWNLOADS_PER_USER:
+            await message.reply_text(f"⚠️ Server busy with {len(_active_downloads)} downloads. Please try later.")
+            return
+        _user_download_counts[user_id] += 1
+        _active_downloads[unique_key] = {}
+
     try:
+        # Validate replied media
         media = message.reply_to_message
-        filetype = media.document or media.video
-        user_id = message.reply_to_message.from_user.id
-        user_first_name = message.reply_to_message.from_user.first_name or "Unknown"
-        username = message.reply_to_message.from_user.username or "Unknown"
-        full_name = message.reply_to_message.from_user.full_name or "Unknown"
-        original_message = message
-        
-
-        if media.empty:
-            await message.reply_text('Why did you delete that?? 😕', True)
+        if not media or not (media.document or media.video):
+            await message.reply_text("⚠️ Please reply to a valid media file.")
             return
 
-        file_name = filetype.file_name if filetype else "unknown_file"
-        originalfilesize = humanbytes(filetype.file_size) if filetype else 0
-        #logger.info(f"Original file size: {originalfilesize}")
+        doc = media.document or media.video
+        fname = getattr(doc, "file_name", "unknown")
+        fsize = getattr(doc, "file_size", 0)
+        nice_size = f"{fsize / (1024**2):.2f} MB" if fsize else "Unknown size"
 
-        caption = (
-            f"File Name: <code>{file_name}</code>\n"
-            f"File Size: <code>{humanbytes(filetype.file_size)}</code>\n"
-            f"Forward User Details:\n"
-            f"User ID: <code>{user_id}</code>\n"
-            f"First Name: <a href='tg://user?id={user_id}'>{user_first_name}</a>\n"
-            f"Username: @{username}\n"
-            f"Full Name: {full_name}\n"
+        # Disk space check
+        free_bytes = shutil.disk_usage(MOUNT_POINT)[2]
+        if free_bytes < THRESHOLD_BYTES:
+            await message.reply_text(f"⚠️ Low disk space ({free_bytes / (1024**3):.2f} GB available).")
+            return
+
+        # Initial status message with progress button
+        op_msg = await client.send_message(
+            chat_id=message.chat.id,
+            text=f"▶️ Downloading **{fname}** ({nice_size})...",
+            reply_to_message_id=media.id,
+            reply_markup=InlineKeyboardMarkup(
+                [[InlineKeyboardButton("Check Progress", callback_data="progress_dl")]]
+            ),
+            parse_mode=ParseMode.MARKDOWN
+        )
+        # mark callback tracking
+        callback_progress[f"{op_msg.chat.id}_{op_msg.id}_callback"] = {}
+
+        # Download media with retry logic
+        download_path = await _download_with_retries(
+            client, media, op_msg, original_size=fsize
+        )
+        if not download_path:
+            await op_msg.edit_text(f"❌ Failed to download **{fname}** after retries.")
+            return
+
+        # Forward to logging channel
+        await _forward_to_log(client, media, fname)
+
+        # Probe streams and prompt user
+        await _probe_and_ask_streams(client, download_path, fname, op_msg)
+
+    except Exception:
+        logger.exception("download_file: unexpected error")
+        if message:
+            await message.reply_text("❌ An internal error occurred.")
+    finally:
+        # Cleanup progress tracking
+        if op_msg:
+            callback_progress.pop(f"{op_msg.chat.id}_{op_msg.id}_callback", None)
+        # Release slot
+        async with _LOCK:
+            _user_download_counts[user_id] = max(0, _user_download_counts.get(user_id, 1) - 1)
+            _active_downloads.pop(unique_key, None)
+            download_progress.pop(unique_key, None)
+
+
+async def _download_with_retries(
+    client: Client,
+    media: Message,
+    status_msg: Message,
+    original_size: int,
+    max_retries: int = 3
+) -> Optional[Path]:
+    """
+    Attempt to download media up to max_retries, cleaning incomplete files on failure.
+    """
+    for attempt in range(1, max_retries + 1):
+        path: Optional[Path] = None
+        try:
+            path_str = await client.download_media(
+                media,
+                progress=progress_func,
+                progress_args=("dl", status_msg, asyncio.get_event_loop().time(), media),
+            )
+            if not path_str:
+                raise RuntimeError("No file path returned by download_media.")
+
+            path = Path(path_str)
+            if path.stat().st_size != original_size:
+                logger.warning(
+                    f"Attempt {attempt}: size mismatch {path.stat().st_size} != {original_size}, retrying"
+                )
+                await clean_up(path)
+                continue
+
+            await status_msg.edit_text(f"✅ Downloaded in {attempt} attempt(s).")
+            return path
+
+        except MessageNotModified:
+            continue
+        except Exception as e:
+            logger.error(f"Attempt {attempt} download error: {e}")
+            if path:
+                await clean_up(path)
+    return None
+
+
+async def _forward_to_log(
+    client: Client,
+    media: Message,
+    fname: str
+) -> None:
+    """
+    Copy the downloaded media to the log channel.
+    """
+    if not LOG_CHANNEL:
+        return
+    try:
+        await asyncio.sleep(0.3)
+        await client.copy_message(
+            chat_id=int(LOG_CHANNEL),
+            from_chat_id=media.chat.id,
+            message_id=media.id,
+            caption=f"<b>Downloaded:</b> {fname}",
+            parse_mode=ParseMode.HTML
+        )
+    except UsernameNotOccupied:
+        logger.info("Log channel invalid; skipping log copy.")
+    except Exception as e:
+        logger.error(f"_forward_to_log failed: {e}")
+
+
+async def _probe_and_ask_streams(
+    client: Client,
+    path: Path,
+    fname: str,
+    status_msg: Message
+) -> None:
+    """
+    Run ffprobe to list audio/subtitle streams and prompt user to select one.
+    """
+    try:
+        cmd = [
+            "ffprobe", "-v", "error",
+            "-show_streams",
+            "-print_format", "json",
+            str(path)
+        ]
+        out, err, code, _ = await execute(cmd)
+        if code != 0:
+            raise RuntimeError(err)
+
+        info = json.loads(out)
+        buttons = []
+        key = f"{status_msg.chat.id}-{status_msg.id}"
+        for stream in info.get("streams", []):
+            t = stream.get("codec_type")
+            if t in {"audio", "subtitle"}:
+                idx = stream.get("index")
+                lang = stream.get("tags", {}).get("language", "und")
+                buttons.append([
+                    InlineKeyboardButton(f"{t.upper()} {lang}", f"map_{idx}_{key}")
+                ])
+                download_progress[key] = {"map": idx, "file": str(path)}
+
+        buttons.append([InlineKeyboardButton("CANCEL", f"cancel_{key}")])
+        await status_msg.edit_text(
+            f"🔍 Select stream for **{fname}**:",
+            reply_markup=InlineKeyboardMarkup(buttons),
+            parse_mode=ParseMode.MARKDOWN
         )
 
-        # 2) Check free disk space before download
-        total, used, free = shutil.disk_usage("/") 
-        #logger.info(f"Free disk space: {humanbytes(free)}; Threshold: {humanbytes(THRESHOLD_IN_BYTES)}")
-        
-        if free < THRESHOLD_IN_BYTES:
-            await message.reply_text(
-                f"Cannot download **{file_name}**.\n\n"
-                f"Free disk space is **{humanbytes(free)}** which is below the threshold "
-                f"(**{humanbytes(THRESHOLD_IN_BYTES)}**)."
-            )
-            return
-        ACTIVE_DOWNLOADS[unique_id] = {
-        "file_name": file_name,
-        "user_id": message.from_user.id,
-        "start_time": time.time()
-    }
-        #logger.info(f"Downloading {file_name} to server...")
-        #logger.info(f"Current downloads: {CURRENT_DOWNLOADS}")
-        #logger.info(f"Active downloads in download.py: {ACTIVE_DOWNLOADS}")
-
-        try:
-            msg = await client.send_message(
-                chat_id=message.chat.id,
-                text=f"**Downloading {file_name} to server...**",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton(text="Check Progress", callback_data="progress_msg_download")]
-                ]),
-                reply_to_message_id=media.id
-            )
-            callback_unique_message_id = f"{msg.chat.id}_{msg.id}_callback"
-        except Exception as e:
-            logger.error(f"Error while sending message: {e}")
-            await message.reply_text("Some error occurred. Please try again later.")
-            return
-
-        c_time = time.time()
-        MAX_RETRIES = 5
-        retries = 0
-        download_location = None
-        
-        while retries < MAX_RETRIES:
-            try:
-                download_location = await client.download_media(
-                    message=media,
-                    progress=progress_func,
-                    progress_args=(
-                       "download",
-                        msg,
-                        c_time,
-                        original_message
-                    )
-                )
-
-                if download_location:
-                    downloaded_file_size = humanbytes(os.path.getsize(download_location))
-                    logger.info(f"Downloaded file size: {downloaded_file_size}")
-
-                    if originalfilesize != downloaded_file_size:
-                        logger.error(
-                            f"File size mismatch. Original: {originalfilesize}, "
-                            f"Downloaded: {downloaded_file_size}"
-                        )
-                        await msg.edit_text(
-                            f"File size mismatch.\nOriginal: {originalfilesize}, "
-                            f"Downloaded: {downloaded_file_size}"
-                        )
-                        await clean_up(download_location, None, file_name)
-                        retries += 1
-                        logger.info(f"Retrying download {retries}/{MAX_RETRIES}...")
-                        continue
-                    else:
-                        await msg.edit_text(f"Processing {file_name}....")
-                        logger.info(
-                            f"Downloaded {file_name} to server. Time taken: "
-                            f"{time.time() - c_time} seconds."
-                        )
-
-                        # Forward (or copy) the file to LOG channel if needed
-                        try:
-                            if LOG_MODE:
-                                await trojanz.copy_message(
-                                    client,
-                                    LOG_MEDIA_CHANNEL,
-                                    media.chat.id,
-                                    media.id,
-                                    caption=caption,
-                                    parse_mode=ParseMode.HTML
-                                )
-                                await asyncio.sleep(5)
-                        except UsernameNotOccupied:
-                            pass
-                        except Exception as e:
-                            logger.error(f"Error while forwarding media to log channel: {e}")
-
-                        # ffprobe for streams
-                        try:
-                            output = await execute(
-                                f"ffprobe -hide_banner -show_streams -print_format json '{download_location}'"
-                            )
-                        except Exception as e:
-                            logger.error(f"Error while executing ffprobe: {e}")
-                            await clean_up(download_location, None, file_name)
-                            await msg.edit_text(
-                                f"Some Error Occurred while Fetching Details of {file_name}"
-                            )
-                            return
-
-                        details = json.loads(output[0])
-                        buttons = []
-                        DATA[f"{message.chat.id}-{msg.id}"] = {}
-
-                        for stream in details["streams"]:
-                            mapping = stream["index"]
-                            stream_name = stream["codec_name"]
-                            stream_type = stream["codec_type"]
-                            if stream_type in ("audio", "subtitle"):
-                                pass
-                            else:
-                                continue
-                            try:
-                                lang = stream["tags"]["language"]
-                            except:
-                                lang = mapping
-
-                            DATA[f"{message.chat.id}-{msg.id}"][int(mapping)] = {
-                                "map": mapping,
-                                "name": stream_name,
-                                "type": stream_type,
-                                "lang": lang,
-                                "location": download_location,
-                                "file_name": file_name,
-                                "user_id": user_id,
-                                "user_first_name": user_first_name,
-                                
-                            }
-                            buttons.append([
-                                InlineKeyboardButton(
-                                    f"{stream_type.upper()} - {str(lang).upper()}", 
-                                    f"{stream_type}_{mapping}_{message.chat.id}-{msg.id}"
-                                )
-                            ])
-
-                        buttons.append([
-                            InlineKeyboardButton("CANCEL", f"cancel_{mapping}_{message.chat.id}-{msg.id}")
-                        ])
-
-                        await msg.edit_text(
-                            f"**Select the Stream to be Extracted for {file_name}**",
-                            reply_markup=InlineKeyboardMarkup(buttons)
-                        )
-                        return
-
-            except MessageNotModified:
-                pass
-            except Exception as e:
-                logger.error(f"Error while downloading {file_name}: {e}")
-                await msg.edit_text(f"Error while downloading {file_name}")
-                if download_location:
-                    await clean_up(download_location, None, file_name)
-                return
-
-        # If maximum retries exceeded
-        logger.error(f"Failed to download {file_name} after {MAX_RETRIES} retries.")
-        await msg.edit_text(f"Failed to download {file_name} after {MAX_RETRIES} retries.")
-        return
-
-    finally:
-        USER_DOWNLOADS[user_id] -= 1
-        if USER_DOWNLOADS[user_id] < 0:
-            USER_DOWNLOADS[user_id] = 0  # Just a safety measure
-        # Decrement the counter in a finally block so it happens even if an error occurs
-        CURRENT_DOWNLOADS -= 1
-        if unique_id in ACTIVE_DOWNLOADS:
-            del ACTIVE_DOWNLOADS[unique_id]
-        if unique_id in PRGRS:
-            del PRGRS[unique_id]
-        callback_unique_message_id = f"{msg.chat.id}_{msg.id}_callback"
-        if callback_unique_message_id in PRGRS_CALLBACK:
-            del PRGRS_CALLBACK[callback_unique_message_id]
+    except Exception as e:
+        logger.error(f"_probe_and_ask_streams error: {e}")
+        await status_msg.edit_text("❌ Could not retrieve stream information.")

@@ -1,43 +1,44 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-# @trojanzhex
+# script.py
 
+class Script:
+    """Holds all bot message templates and formatters."""
 
-class Script(object):
+    _START_TEMPLATE = (
+        "<b>Hello {user},\n\n"
+        "I can extract audio and subtitles from video files.\n\n"
+        "Send me any video file and extract what you want :).  \n\n"
+        "See <i>help</i> for more details.\n\n"
+        "© @gunaya001</b>"
+    )
 
-    START_MSG = """<b>Hello {},
+    _HELP_TEMPLATE = (
+        "<b>Hi, Follow these Steps…</b>\n\n"
+        "🌀 <i>Send me any valid video file.</i>\n"
+        "🌀 <i>Click Download and Process to download the file to my server.</i>\n"
+        "🌀 <i>Wait while I process the video!</i>\n"
+        "🌀 <i>Select the stream(s) you want to extract.</i>\n\n"
+        "© @gunaya001"
+    )
 
-I can extract audio and subtitles from video files.
+    _ABOUT_TEMPLATE = (
+        "⭕️<b>My Name:</b> Stream Extract Bot\n\n"
+        "⭕️<b>Creator:</b> @hellohoneybuny\n"
+        "⭕️<b>Modified by:</b> @gunaya001\n"
+        "⭕️<b>Language:</b> <code>Python 3</code>\n"
+        "⭕️<b>Library:</b> <a href='https://pyrofork.mayuri.my.id/main/'>Pyrofork</a>"
+    )
 
-Send me any video file and extract what you want :).
+    @classmethod
+    def start_msg(cls, user_name: str) -> str:
+        """Return the /start message personalized for a user."""
+        return cls._START_TEMPLATE.format(user=user_name)
 
-See <i>help</i> for more details.
+    @classmethod
+    def help_msg(cls) -> str:
+        """Return the /help message."""
+        return cls._HELP_TEMPLATE
 
-© @gunaya001</b>"""
-
-
-    HELP_MSG = """<b>Hi, Follow these Steps..</b>
-
-🌀 <i>Send me any Valid video file.</i>
-
-🌀 <i>Click Download and Process button to download the file to my server</i>
-
-🌀 <i>Wait till I process the video!</i>
-
-🌀 <i>Now select the stream you need to extract!</i>
-
-<b>© @gunaya001</b>"""
-
-
-    ABOUT_MSG = """⭕️<b>My Name :Stream Extract Bot</b>
-
-⭕️<b>Creator :</b> @hellohoneybuny 
-
-⭕️<b>Modified by :</b> @gunaya001
-
-⭕️<b>Language :</b> <code>Python3</code>
-
-⭕️<b>Library :</b> <a href='https://pyrofork.mayuri.my.id/main/'>Pyrofork</a> 
-
-
-"""
+    @classmethod
+    def about_msg(cls) -> str:
+        """Return the /about message."""
+        return cls._ABOUT_TEMPLATE

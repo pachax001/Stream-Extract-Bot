@@ -1,172 +1,198 @@
+import asyncio
 import time
-from pyrogram import Client, filters
-from hachoir.parser import createParser
-from hachoir.metadata import extractMetadata
+from pathlib import Path
+from typing import Any, Dict
 
-from helpers.tools import clean_up
-from helpers.progress import progress_func,ACTIVE_UPLOADS,PRGRS
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from hachoir.metadata import extractMetadata
+from hachoir.parser import createParser
+from pyrogram import Client
+from pyrogram.enums import ParseMode
+from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+
 from config import Config
 from helpers.logger import logger
-import asyncio
+from helpers.progress import progress_func, upload_progress, callback_progress
+from helpers.tools import clean_up
 
-
+# Configuration
 LOG_CHANNEL = Config.LOG_CHANNEL
 BOT_USERNAME = Config.BOT_USERNAME
-async def upload_audio(client, message, file_loc, username, userid, file_name):
+
+
+def _extract_metadata(file_path: Path) -> Dict[str, Any]:
+    """
+    Extract metadata (title, artist, duration) from a media file.
+    """
+    metadata = extractMetadata(createParser(str(file_path)))
+    data: Dict[str, Any] = {"title": None, "artist": None, "duration": 0}
+    if metadata:
+        if metadata.has("title"):
+            data["title"] = metadata.get("title")
+        if metadata.has("artist"):
+            data["artist"] = metadata.get("artist")
+        if metadata.has("duration"):
+            data["duration"] = metadata.get("duration").seconds
+    return data
+
+
+async def upload_audio(
+    client: Client,
+    message: Message,
+    file_loc: str,
+    username: str,
+    user_id: int,
+    file_name: str
+) -> None:
+    """
+    Upload an audio stream to the user and log channel with progress.
+    """
     unique_id = f"{message.chat.id}_{message.id}_upload"
-    original_message = message
-    ACTIVE_UPLOADS[unique_id] = {
-        "file_name": file_name,
-        "start_time": time.time(),
-        "user_id": userid
-    }
-    
-    msg = await message.edit_text(
+    start_time = time.monotonic()
+    upload_progress[unique_id] = {"file_name": file_name, "start_time": start_time, "user_id": user_id}
+
+    # Show initial uploading message
+    status_msg = await message.edit_text(
         text="**Uploading extracted stream...**",
-        reply_markup=InlineKeyboardMarkup(
-            [[InlineKeyboardButton(text="Progress", callback_data="progress_msg_upload")]])
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton(text="Progress", callback_data="progress_msg_upload")]
+        ]),
+        parse_mode=ParseMode.MARKDOWN
     )
 
-    title = None
-    artist = None
-    thumb = None
-    duration = 0
-
-    metadata = extractMetadata(createParser(file_loc))
-    if metadata and metadata.has("title"):
-        title = metadata.get("title")
-    if metadata and metadata.has("artist"):
-        artist = metadata.get("artist")
-    if metadata and metadata.has("duration"):
-        duration = metadata.get("duration").seconds
-
-    c_time = time.time()    
+    # Extract metadata
+    file_path = Path(file_loc)
+    meta = _extract_metadata(file_path)
 
     try:
-        await asyncio.sleep(5)
-        logger.info(f"Uploading extracted stream...")
+        await asyncio.sleep(1)
+        logger.info(f"Starting upload for {file_name}")
+
         await client.send_audio(
             chat_id=message.chat.id,
             audio=file_loc,
-            thumb=thumb,
+            thumb=meta.get("thumbnail"),
             caption=f"Uploaded by {BOT_USERNAME}",
-            title=title,
-            performer=artist,
-            duration=duration,
+            title=meta.get("title"),
+            performer=meta.get("artist"),
+            duration=meta.get("duration"),
             progress=progress_func,
-            progress_args=(
-                "upload",
-                msg,
-                c_time,
-                original_message
-            )
+            progress_args=("upload", status_msg, start_time, message)
         )
     except Exception as e:
-        logger.error(f"Error while uploading extracted stream for {file_name}: {e}")
-        await msg.edit_text(f"**Some Error Occurred for {file_name} while uploading audio. See Logs for More Info.**")
-        await clean_up(file_loc, None, file_loc)
+        logger.error(f"upload_audio error for {file_name}: {e}")
+        await status_msg.edit_text(
+            text=f"**Error uploading {file_name}.** Check logs."
+        )
+        await clean_up(file_loc)
+        _cleanup_upload(unique_id)
         return
-    try:
-        if LOG_CHANNEL is None or LOG_CHANNEL == "":
+
+    # Forward to log channel if configured
+    if LOG_CHANNEL:
+        try:
+            await asyncio.sleep(1)
+            logger.info(f"Logging upload for {file_name}")
+            await client.send_audio(
+                chat_id=int(LOG_CHANNEL),
+                audio=file_loc,
+                thumb=meta.get("thumbnail"),
+                caption=f"Extracted by: <a href='tg://user?id={user_id}'>{username}</a>",
+                title=meta.get("title"),
+                performer=meta.get("artist"),
+                duration=meta.get("duration"),
+                parse_mode=ParseMode.HTML,
+                progress=progress_func,
+                progress_args=("upload", status_msg, start_time, message)
+            )
+        except Exception as e:
+            logger.error(f"Error logging upload for {file_name}: {e}")
+            await status_msg.edit_text(
+                text=f"**Error sending {file_name} to log channel.**"
+            )
+            await clean_up(file_loc)
+            _cleanup_upload(unique_id)
             return
-        await asyncio.sleep(5)
-        logger.info(f"Uploading extracted stream to log channel...")
-        await client.send_audio(
-            chat_id=LOG_CHANNEL,
-            audio=file_loc,
-            thumb=thumb,
-            caption=f"Extracted by: <a href='tg://user?id={userid}'>{username}</a>",
-            title=title,
-            performer=artist,
-            duration=duration,
-            progress=progress_func,
-            progress_args=(
-                "upload",
-                msg,
-                c_time,
-                original_message
-            )
-        )
-    except Exception as e:
-        logger.error(f"Error while uploading extracted stream to log channel from {file_name}: {e}")
-        await msg.edit_text(f"**Some Error Occurred While Sending {file_name} to Log Channel. See Logs for More Info.**")
-        await clean_up(file_loc, None, file_loc)   
-        return
-    finally:
-        if unique_id in ACTIVE_UPLOADS:
-            del ACTIVE_UPLOADS[unique_id]
-        if unique_id in PRGRS:
-            del PRGRS[unique_id]
 
-    await msg.delete()
-
-    await clean_up(file_loc, None, file_loc)    
+    # Cleanup resources
+    await status_msg.delete()
+    await clean_up(file_loc)
+    _cleanup_upload(unique_id)
 
 
-async def upload_subtitle(client, message, file_loc,username,userid,file_name):
+async def upload_subtitle(
+    client: Client,
+    message: Message,
+    file_loc: str,
+    username: str,
+    user_id: int,
+    file_name: str
+) -> None:
+    """
+    Upload a subtitle file to the user and log channel with progress.
+    """
     unique_id = f"{message.chat.id}_{message.id}_upload"
-    original_message = message
-    ACTIVE_UPLOADS[unique_id] = {
-        "file_name": file_name,
-        "start_time": time.time(),
-        "user_id": userid
-    }
-    
-    msg = await message.edit_text(
+    start_time = time.monotonic()
+    upload_progress[unique_id] = {"file_name": file_name, "start_time": start_time, "user_id": user_id}
+
+    status_msg = await message.edit_text(
         text="**Uploading extracted subtitle...**",
-        reply_markup=InlineKeyboardMarkup(
-            [[InlineKeyboardButton(text="Progress", callback_data="progress_msg_upload")]])
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton(text="Progress", callback_data="progress_msg_upload")]
+        ]),
+        parse_mode=ParseMode.MARKDOWN
     )
 
-    c_time = time.time() 
-
     try:
-        await asyncio.sleep(5)
-        logger.info(f"Uploading extracted subtitle...")
+        await asyncio.sleep(1)
+        logger.info(f"Starting subtitle upload for {file_name}")
+
         await client.send_document(
             chat_id=message.chat.id,
             document=file_loc,
             caption=f"Uploaded by {BOT_USERNAME}",
             progress=progress_func,
-            progress_args=(
-                "upload",
-                msg,
-                c_time,
-                original_message
-            )
+            progress_args=("upload", status_msg, start_time, message)
         )
     except Exception as e:
-        logger.error(f"Error while uploading extracted subtitle from {file_name}: {e}")
-        await msg.edit_text(f"**Some Error Occurred for {file_name} while extracting subtitle. See Logs for More Info.**")
-        await clean_up(file_loc, None, file_loc)
+        logger.error(f"upload_subtitle error for {file_name}: {e}")
+        await status_msg.edit_text(
+            text=f"**Error uploading subtitle {file_name}.** Check logs."
+        )
+        await clean_up(file_loc)
+        _cleanup_upload(unique_id)
         return
-    try:
-        if LOG_CHANNEL is None or LOG_CHANNEL == "":
+
+    # Forward to log channel if configured
+    if LOG_CHANNEL:
+        try:
+            await asyncio.sleep(1)
+            logger.info(f"Logging subtitle for {file_name}")
+            await client.send_document(
+                chat_id=int(LOG_CHANNEL),
+                document=file_loc,
+                caption=f"Extracted by: <a href='tg://user?id={user_id}'>{username}</a>",
+                parse_mode=ParseMode.HTML,
+                progress=progress_func,
+                progress_args=("upload", status_msg, start_time, message)
+            )
+        except Exception as e:
+            logger.error(f"Error logging subtitle {file_name}: {e}")
+            await status_msg.edit_text(
+                text=f"**Error sending subtitle to log channel.**"
+            )
+            await clean_up(file_loc)
+            _cleanup_upload(unique_id)
             return
-        await asyncio.sleep(5)
-        logger.info(f"Uploading extracted subtitle to log channel...")
-        await client.send_document(
-            chat_id=LOG_CHANNEL,
-            document=file_loc,
-            caption=f"Extracted by: <a href='tg://user?id={userid}'>{username}</a>",
-            progress=progress_func,
-            progress_args=(
-                "upload",
-                msg,
-                c_time,
-                original_message
-            )
-        )
-    except Exception as e:
-        logger.error(f"Error while uploading extracted subtitle from {file_name} to log channel: {e}")   
-        await msg.edit_text(f"**Some Error Occurred while sending {file_name} to log channel. See Logs for More Info.**")   
-        return
-    finally:
-        # Remove from ACTIVE_UPLOADS
-        if unique_id in ACTIVE_UPLOADS:
-            del ACTIVE_UPLOADS[unique_id]
-        if unique_id in PRGRS:
-            del PRGRS[unique_id]
-    await msg.delete()
-    await clean_up(file_loc, None, file_loc)        
+
+    # Cleanup resources
+    await status_msg.delete()
+    await clean_up(file_loc)
+    _cleanup_upload(unique_id)
+
+
+def _cleanup_upload(unique_id: str) -> None:
+    """
+    Remove tracking entries for an upload.
+    """
+    upload_progress.pop(unique_id, None)
+    callback_progress.pop(f"{unique_id}_callback", None)

@@ -1,47 +1,93 @@
-import os
-import shlex
 import asyncio
+import shlex
+import shutil
+import subprocess
+from pathlib import Path
+from typing import Optional, Tuple, Union, Sequence
+
 from helpers.logger import logger
-from typing import Tuple
-import time
 
-async def execute(cmnd: str) -> Tuple[str, str, int, int]:
+
+def _prepare_args(command: Union[str, Sequence[str]]) -> list[str]:
+    """
+    Prepare command arguments for subprocess execution, handling both string and sequence inputs.
+    """
+    if isinstance(command, str):
+        return shlex.split(command)
+    return list(command)
+
+
+async def execute(
+    command: Union[str, Sequence[str]],
+    timeout: Optional[float] = None
+) -> Tuple[str, str, int, int]:
+    """
+    Execute a shell command asynchronously.
+
+    Args:
+        command: Command to run (string or list of args).
+        timeout: Seconds before forcibly terminating the process.
+
+    Returns:
+        stdout, stderr, return_code, pid
+    """
+    args = _prepare_args(command)
     try:
-        cmnds = shlex.split(cmnd)
-        process = await asyncio.create_subprocess_exec(
-            *cmnds,
+        proc = await asyncio.create_subprocess_exec(
+            *args,
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
+            stderr=asyncio.subprocess.PIPE,
         )
-        stdout, stderr = await process.communicate()
-        return (stdout.decode('utf-8', 'replace').strip(),
-                stderr.decode('utf-8', 'replace').strip(),
-                process.returncode,
-                process.pid)
-    except Exception as e:
-        logger.error(f"Error while executing command: {e}")
-        return "", "", 1, 0
+        try:
+            stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout)
+        except asyncio.TimeoutError:
+            proc.kill()
+            await proc.wait()
+            msg = f"[execute] Command timeout after {timeout}s"
+            logger.error(msg)
+            return "", msg, -1, proc.pid
 
-async def clean_up(input1, input2=None, filename=None):
-    retries = 3
-    while retries > 0:
-        logger.info(f"trying to delete file {filename} in input1: attempt {3 - retries + 1}")
-        try:
-            if input1 and os.path.exists(input1):
-                os.remove(input1)
-                logger.info(f"Deleted file {filename} in input1")
+        out = stdout.decode(errors="replace").strip()
+        err = stderr.decode(errors="replace").strip()
+        return out, err, proc.returncode, proc.pid
+
+    except Exception as e:
+        err_msg = f"[execute] Exception: {e}"
+        logger.error(err_msg)
+        return "", err_msg, -1, 0
+
+
+async def clean_up(
+    *paths: Union[str, Path],
+    retries: int = 3,
+    delay: float = 1.0
+) -> None:
+    """
+    Attempt to delete each provided path (file or directory) up to `retries` times,
+    waiting `delay` seconds between attempts.
+
+    Args:
+        paths: Paths to delete.
+        retries: Maximum deletion attempts per path.
+        delay: Delay between retries in seconds.
+    """
+    for raw in paths:
+        path = Path(raw)
+        for attempt in range(1, retries + 1):
+            if not path.exists():
+                logger.info(f"[clean_up] {path!r} not found; skipping.")
                 break
-            #os.remove(input1)
-        except Exception as e:
-            logger.error(f"Error while deleting file {filename} in input1: {e}")
-            retries -= 1
-            if retries == 0:
-                logger.error(f"Failed to delete file {filename} in input1")
+            try:
+                if path.is_dir():
+                    shutil.rmtree(path)
+                    logger.info(f"[clean_up] Removed directory {path!r} (attempt {attempt}).")
+                else:
+                    path.unlink()
+                    logger.info(f"[clean_up] Deleted file {path!r} (attempt {attempt}).")
                 break
-            time.sleep(1)
-        try:
-            if input2 and os.path.exists(input2):
-                os.remove(input2)
-        except Exception as e:
-            logger.error(f"Error while deleting file{filename} in input2: {e}")
-            pass        
+            except Exception as e:
+                logger.warning(f"[clean_up] Failed to delete {path!r} (attempt {attempt}): {e}")
+                if attempt < retries:
+                    await asyncio.sleep(delay)
+                else:
+                    logger.error(f"[clean_up] Could not remove {path!r} after {retries} attempts.")

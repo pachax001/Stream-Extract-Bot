@@ -1,60 +1,66 @@
-import os
 import asyncio
-from pyrogram import Client
-from config import Config
-from helpers.logger import logger
 import datetime
+from pathlib import Path
+
 import pytz
-from pyrogram.types import User
+from pyrogram import Client
+from helpers.logger import logger
+from config import Config
 
-async def edit_restart_message(app):
-    
-    # This function edits a restart message if it exists
+# Constants
+RESTART_FILE = Path("restart_msg_id.txt")
+VERSION = "v1.1.0.m"
+TIMEZONE = pytz.timezone("Asia/Kolkata")
+
+async def edit_restart_message(app: Client) -> None:
+    """
+    Edit the restart notification message for the bot owner and log channels if present.
+    """
     try:
-        current_time = datetime.datetime.now(pytz.timezone('Asia/Kolkata'))
-        date_formatted = current_time.strftime("%d/%m/%y")
-        time_formatted = current_time.strftime("%I:%M:%S %p")
+        # Current timestamp in configured timezone
+        now = datetime.datetime.now(TIMEZONE)
+        restart_text = (
+            f"⌬ Restarted Successfully!\n"
+            f"┠ Date: {now:%d/%m/%y}\n"
+            f"┠ Time: {now:%I:%M:%S %p}\n"
+            f"┠ TimeZone: {TIMEZONE.zone}\n"
+            f"┖ Version: {VERSION}"
+        )
 
-
-        version = "v1.0.9.m"
-
-        restart_message = f"⌬ Restarted Successfully!\n┠ Date: {date_formatted}\n┠ Time: {time_formatted}\n┠ TimeZone: Asia/Kolkata\n┖ Version: {version}"
-        if os.path.exists("restart_msg_id.txt"):
-            with open("restart_msg_id.txt", "r") as f:
-                message_id = int(f.read().strip())
-            
-            await app.edit_message_text(
-                chat_id=Config.OWNER_ID,  #
-                message_id=message_id,
-                text=restart_message
-            )
-            if Config.LOG_CHANNEL is not None and Config.LOG_CHANNEL != "":
-                try:
-                    await app.send_message(
-                        chat_id=int(Config.LOG_CHANNEL),
-                        text=f"Restarted Successfully!\nDate: {date_formatted}\nTime: {time_formatted}\nTimeZone: Asia/Kolkata\nVersion: {version}"
-                    )
-                except Exception as e:
-                    logger.error("Failed to send restart message to LOG_CHANNEL: %s", e)
-                    pass
-            if Config.LOG_MEDIA_CHANNEL is not None and Config.LOG_MEDIA_CHANNEL != "":
-                try:
-                    await app.send_message(
-                        chat_id=int(Config.LOG_MEDIA_CHANNEL),
-                        text=f"Restarted Successfully!\nDate: {date_formatted}\nTime: {time_formatted}\nTimeZone: Asia/Kolkata\nVersion: {version}"
-                    )
-                except Exception as e:
-                    logger.error("Failed to send restart message to LOG_MEDIA_CHANNEL: %s", e)
-                    pass
-
-            logger.info("Restart message edited successfully.")
-            os.remove("restart_msg_id.txt")
-        else:
+        if not RESTART_FILE.exists():
             logger.info("No restart message found.")
-    except Exception as e:
-        logger.error("Failed to edit restart message: %s", e)
+            return
 
-async def main():
+        message_id = int(RESTART_FILE.read_text().strip())
+
+        # Edit message to bot owner
+        await app.edit_message_text(
+            chat_id=Config.OWNER_ID,
+            message_id=message_id,
+            text=restart_text
+        )
+
+        # Send to log channels (if configured)
+        for channel in {Config.LOG_CHANNEL, Config.LOG_MEDIA_CHANNEL}:
+            if channel:
+                try:
+                    await app.send_message(
+                        chat_id=int(channel),
+                        text=restart_text
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to send restart message to {channel}: {e}")
+
+        logger.info("Restart message handled successfully.")
+        RESTART_FILE.unlink()
+
+    except Exception as e:
+        logger.error(f"Failed to edit restart message: {e}")
+
+async def main() -> None:
+    """
+    Initialize and run the Pyrogram bot client.
+    """
     app = Client(
         "TroJanz",
         bot_token=Config.BOT_TOKEN,
@@ -62,23 +68,22 @@ async def main():
         api_hash=Config.API_HASH,
         plugins=dict(root="plugins"),
         workers=300,
-        max_concurrent_transmissions=100
+        max_concurrent_transmissions=100,
     )
 
     try:
-        
-        
-
-        # Start the bot
         await app.start()
         me = await app.get_me()
         logger.info(f"{me.username} has started.")
         await edit_restart_message(app)
-        # Keep the application running
+
+        # Keep the bot running until manually stopped
         await asyncio.Event().wait()
 
     except Exception as e:
-        logger.error("Error occurred: %s", e)
+        logger.error(f"Unexpected error: {e}")
+
+    finally:
         await app.stop()
 
 if __name__ == "__main__":

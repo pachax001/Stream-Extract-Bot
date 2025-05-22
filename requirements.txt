@@ -1,7 +1,7 @@
 asyncio
 ffmpeg
 hachoir
-pyrofork
+pyrofork==2.3.61
 python-dotenv
 pytz
 TgCrypto

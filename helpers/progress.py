@@ -1,72 +1,99 @@
-import os
 import time
-import asyncio
+from typing import Any, Dict
+
 from helpers.logger import logger
 
-PRGRS = {}
-PRGRS_CALLBACK = {}
-ACTIVE_DOWNLOADS = {}
-ACTIVE_UPLOADS = {} 
+# Progress tracking registries
+download_progress: Dict[str, Dict[str, Any]] = {}
+callback_progress: Dict[str, Dict[str, Any]] = {}
+upload_progress: Dict[str, Dict[str, Any]] = {}
+
+
+def human_readable_bytes(size: float) -> str:
+    """
+    Convert a byte count into a human-readable string (e.g., "1.23 MB").
+    """
+    if size <= 0:
+        return "0 B"
+
+    units = ["B", "KB", "MB", "GB", "TB"]
+    index = 0
+    while size >= 1024 and index < len(units) - 1:
+        size /= 1024
+        index += 1
+    return f"{size:.2f} {units[index]}"
+
+
+def format_duration(ms: float) -> str:
+    """
+    Format milliseconds into a string like "1h, 23m, 45s".
+    """
+    seconds, ms = divmod(int(ms), 1000)
+    minutes, sec = divmod(seconds, 60)
+    hours, min_ = divmod(minutes, 60)
+    parts = []
+    if hours:
+        parts.append(f"{hours}h")
+    if min_:
+        parts.append(f"{min_}m")
+    if sec:
+        parts.append(f"{sec}s")
+    if ms:
+        parts.append(f"{ms}ms")
+    return ", ".join(parts) or "0s"
+
+
 async def progress_func(
-    current,
-    total,
-    ud_type,
-    message,
-    start,
-    original_message,
-):
-    now = time.time()
-    diff = now - start
-    if round(diff % 5.00) == 0 or current == total:
-        percentage = current * 100 / total
-        speed = current / diff
-        elapsed_time = round(diff * 1000)  # milliseconds
-        time_to_completion = round((total - current) / speed * 1000)  # milliseconds
-        estimated_total_time = elapsed_time + time_to_completion
+    current: float,
+    total: float,
+    ud_type: str,
+    message: Any,
+    start_time: float,
+    original_message: Any,
+    interval: float = 5.0,
+) -> None:
+    """
+    Update global progress dictionaries at most every `interval` seconds or when complete.
 
-        elapsed_time_str = TimeFormatter(milliseconds=elapsed_time)
-        estimated_total_time_str = TimeFormatter(milliseconds=estimated_total_time)
-        unique_id = f"{original_message.chat.id}_{original_message.id}_{ud_type}"
-        unique_id_callback = f"{message.chat.id}_{message.id}_callback"
-        #logger.info(f"Progress for {unique_id}: {percentage}%")
-        PRGRS[unique_id] = {
-            "ud_type": ud_type,
-            "current": humanbytes(current),
-            "total": humanbytes(total),
-            "speed": humanbytes(speed) + "/s",
-            "progress": percentage,
-            "elapsed": elapsed_time_str,
-            "eta": estimated_total_time_str
-        }
-        PRGRS_CALLBACK[unique_id_callback] = {
-            "ud_type": ud_type,
-            "current": humanbytes(current),
-            "total": humanbytes(total),
-            "speed": humanbytes(speed) + "/s",
-            "progress": percentage,
-            "elapsed": elapsed_time_str,
-            "eta": estimated_total_time_str
-        }
+    Args:
+        current: Bytes processed so far.
+        total: Total bytes to process.
+        ud_type: "download" or "upload".
+        message: Current Telegram message object.
+        start_time: Epoch timestamp when transfer started.
+        original_message: The original Telegram message object.
+        interval: Minimum seconds between updates.
+    """
+    now = time.monotonic()
+    elapsed = now - start_time
+    if elapsed < 0:
+        elapsed = 0
 
-def humanbytes(size):
-    if not size:
-        return ""
-    power = 2 ** 10
-    n = 0
-    Dic_powerN = {0: '', 1: 'K', 2: 'M', 3: 'G', 4: 'T'}
-    while size > power:
-        size /= power
-        n += 1
-    return str(round(size, 2)) + " " + Dic_powerN[n] + 'B'
+    # Only update if at least `interval` seconds have passed or transfer is done
+    if elapsed < interval and current < total:
+        return
 
-def TimeFormatter(milliseconds: int) -> str:
-    seconds, milliseconds = divmod(int(milliseconds), 1000)
-    minutes, seconds = divmod(seconds, 60)
-    hours, minutes = divmod(minutes, 60)
-    days, hours = divmod(hours, 24)
-    tmp = ((str(days) + "d, ") if days else "") + \
-        ((str(hours) + "h, ") if hours else "") + \
-        ((str(minutes) + "m, ") if minutes else "") + \
-        ((str(seconds) + "s, ") if seconds else "") + \
-        ((str(milliseconds) + "ms, ") if milliseconds else "")
-    return tmp.rstrip(', ')
+    # Prevent division by zero
+    speed = current / elapsed if elapsed > 0 else 0
+    progress_pct = (current / total * 100) if total > 0 else 0
+
+    elapsed_ms = elapsed * 1000
+    eta_ms = ((total - current) / speed * 1000) if speed > 0 else 0
+
+    record = {
+        "ud_type": ud_type,
+        "current": human_readable_bytes(current),
+        "total": human_readable_bytes(total),
+        "speed": f"{human_readable_bytes(speed)}/s",
+        "progress": round(progress_pct, 2),
+        "elapsed": format_duration(elapsed_ms),
+        "eta": format_duration(eta_ms),
+    }
+
+    key = f"{original_message.chat.id}_{original_message.id}_{ud_type}"
+    download_progress[key] = record
+
+    callback_key = f"{message.chat.id}_{message.id}_callback"
+    callback_progress[callback_key] = record
+
+    logger.info(f"[progress] {ud_type} {progress_pct:.2f}% ({key})")

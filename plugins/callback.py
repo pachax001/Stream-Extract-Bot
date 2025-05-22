@@ -24,7 +24,7 @@ async def callback_handler(client: Client, query: CallbackQuery) -> None:
     data = query.data or ""
     chat_id = query.message.chat.id
     msg_id = query.message.id
-    await query.answer()
+    #await query.answer()
 
     # ------- NAVIGATION BUTTONS -------
     if data in ("start_data", "help_data", "about_data"):

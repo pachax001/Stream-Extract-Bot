@@ -1,6 +1,9 @@
 """Regression tests for config, stream state and cleanup. No Telegram credentials required."""
 import json
 import os
+import shutil
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -93,6 +96,115 @@ class TransferTests(unittest.IsolatedAsyncioTestCase):
         out, err, code, pid = await execute(["/nonexistent-wzgram-test-program"])
         self.assertEqual(code, -1)
         self.assertEqual(pid, 0)
+
+
+class AutomaticUpdateTests(unittest.TestCase):
+    @staticmethod
+    def _run_git(cwd, *args):
+        return subprocess.run(
+            ["git", *args], cwd=cwd, check=True, capture_output=True, text=True,
+        ).stdout.strip()
+
+    def test_configured_branch_replaces_tracked_edits_and_preserves_config(self):
+        """The configured remote is authoritative without removing config.env."""
+        if not shutil.which("git"):
+            self.skipTest("Git is not installed")
+        from update import update_repository
+
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "source"
+            deployed = Path(directory) / "deployed"
+            source.mkdir()
+            self._run_git(source, "init", "-b", "main")
+            self._run_git(source, "config", "user.email", "tests@example.invalid")
+            self._run_git(source, "config", "user.name", "CI Bot")
+            (source / "version.txt").write_text("v1", encoding="utf-8")
+            self._run_git(source, "add", "version.txt")
+            self._run_git(source, "commit", "-m", "initial")
+            self._run_git(source, "clone", str(source), str(deployed))
+
+            (deployed / "config.env").write_text('BOT_TOKEN="unchanged"\n', encoding="utf-8")
+            (deployed / "version.txt").write_text("local edited", encoding="utf-8")
+            (source / "version.txt").write_text("v2", encoding="utf-8")
+            self._run_git(source, "commit", "-am", "upstream update")
+
+            with patch("update.PROJECT_ROOT", deployed):
+                self.assertTrue(update_repository(str(source), "main"))
+                self.assertEqual((deployed / "version.txt").read_text(encoding="utf-8"), "v2")
+                self.assertEqual(
+                    (deployed / "config.env").read_text(encoding="utf-8"),
+                    'BOT_TOKEN="unchanged"\n',
+                )
+
+                # A bad configured branch cannot overwrite the installed code.
+                (deployed / "version.txt").write_text("local still here", encoding="utf-8")
+                self.assertFalse(update_repository(str(source), "missing-branch"))
+                self.assertEqual(
+                    (deployed / "version.txt").read_text(encoding="utf-8"),
+                    "local still here",
+                )
+
+    def test_startup_updates_before_launch_even_after_git_failure(self):
+        """start.sh invokes the updater first, and always starts the bot."""
+        with tempfile.TemporaryDirectory() as directory:
+            workdir = Path(directory)
+            startup = (Path(__file__).resolve().parents[1] / "start.sh").resolve()
+            for update_exit_code in (0, 1):
+                output = workdir / "sequence.txt"
+                output.unlink(missing_ok=True)
+                (workdir / "update.py").write_text(
+                    "from pathlib import Path\n"
+                    "with Path('sequence.txt').open('a') as log: log.write('update\\n')\n"
+                    f"raise SystemExit({update_exit_code})\n",
+                    encoding="utf-8",
+                )
+                (workdir / "main.py").write_text(
+                    "from pathlib import Path\n"
+                    "with Path('sequence.txt').open('a') as log: log.write('main\\n')\n",
+                    encoding="utf-8",
+                )
+                process = subprocess.run(
+                    ["sh", str(startup)],
+                    cwd=workdir,
+                    capture_output=True,
+                    text=True,
+                    timeout=15,
+                )
+                self.assertEqual(process.returncode, 0, process.stderr)
+                self.assertEqual(
+                    output.read_text(encoding="utf-8").splitlines(),
+                    ["update", "main"],
+                )
+
+
+class RestartUpdateTests(unittest.IsolatedAsyncioTestCase):
+    async def test_restart_runs_updater_before_replacing_process(self):
+        from plugins.start import restart_command
+        from plugins import start as start_module
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            message = SimpleNamespace(
+                reply_text=AsyncMock(return_value=SimpleNamespace(id=12345)),
+            )
+            child = SimpleNamespace(
+                returncode=0,
+                communicate=AsyncMock(return_value=(b"updated", b"")),
+            )
+            with (
+                patch.object(start_module, "RESTART_FILE", root / "restart_id.txt"),
+                patch.object(start_module, "DOWNLOADS_DIR", root / "downloads"),
+                patch.object(start_module.asyncio, "create_subprocess_exec", new=AsyncMock(return_value=child)) as spawn,
+                patch.object(start_module.os, "execv", side_effect=RuntimeError("fake process replacement")) as replace,
+            ):
+                with self.assertRaisesRegex(RuntimeError, "fake process replacement"):
+                    await restart_command(None, message)
+                spawn.assert_awaited_once_with(
+                    sys.executable, "update.py",
+                    stdout=start_module.asyncio.subprocess.PIPE,
+                    stderr=start_module.asyncio.subprocess.PIPE,
+                )
+                replace.assert_called_once_with(sys.executable, [sys.executable, "main.py"])
 
 
 if __name__ == "__main__":

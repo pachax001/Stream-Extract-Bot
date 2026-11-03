@@ -7,10 +7,8 @@ from dotenv import load_dotenv
 from helpers.logger import logger
 
 load_dotenv("config.env", override=True)
-UPSTREAM_REPO = os.getenv(
-    "UPSTREAM_REPO", "https://github.com/rumalg123/Stream-Extract-Bot.git"
-)
-UPSTREAM_BRANCH = os.getenv("UPSTREAM_BRANCH", "main")
+UPSTREAM_REPO = os.getenv("UPSTREAM_REPO") or "https://github.com/rumalg123/Stream-Extract-Bot.git"
+UPSTREAM_BRANCH = os.getenv("UPSTREAM_BRANCH") or "main"
 
 
 def update_repository(repo: str, branch: str) -> bool:

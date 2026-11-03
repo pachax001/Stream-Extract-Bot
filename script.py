@@ -25,7 +25,7 @@ class Script:
         "⭕️<b>Creator:</b> @hellohoneybuny\n"
         "⭕️<b>Modified by:</b> @gunaya001\n"
         "⭕️<b>Language:</b> <code>Python 3</code>\n"
-        "⭕️<b>Library:</b> <a href='https://pyrofork.mayuri.my.id/main/'>Pyrofork</a>"
+        "⭕️<b>Library:</b> <a href='https://wzgram.com/'>WZGram</a>"
     )
 
     @classmethod

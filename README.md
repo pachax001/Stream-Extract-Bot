@@ -1,65 +1,54 @@
 # Streams Extractor Bot
 
+A Telegram bot that extracts audio or subtitle streams from an uploaded video. Uses [WZGram](https://wzgram.com/) and FFmpeg.
 
-#### This Bot can extract audios and subtitles from video files.
-#### Send any valid video file and the bot shows you available streams in it that can be extracted!!
+## Deploy
 
-## Installation
+Python 3.10 or newer is required. The supplied Dockerfile uses Debian Bookworm and Python 3.11.
 
-### Deploy in your vps
-#### We are gonna use docker compose to run the bot.
-Install docker on your VPS. See official [Docker Docs.](https://docs.docker.com/engine/install/ubuntu/)
-<br> After installing docker follow the below steps.</br>
-1. Clone the repo and change directory to streamextract
-```
-git clone https://github.com/pachax001/Stream-Extract-Bot.git streamextract/ && cd streamextract
-```
-2.Rename sample_config.env to config.env and fill config.env
-```
-cp sample_config.env config.env
-```
-Edit config.env
-```
-nano config.env
-```
-3. After filling and saving config.env type this command in terminal and press enter.
- ```
-sudo docker compose up
-```
-### Extra
+1. Clone the repository and create the configuration:
 
-Added /log command to retireve log file of the bot.
+   ```bash
+   git clone https://github.com/rumalg123/Stream-Extract-Bot.git streamextract
+   cd streamextract
+   cp sample_config.env config.env
+   ```
 
-Added /restart command to  restart and update bot from repo.
-1. To stop docker container
- ```
-sudo docker compose down
-```
-2. To delete stopped containers.
-```
-sudo docker system prune -a
-```
-## Configs
+2. Set BOT_TOKEN, APP_ID, API_HASH, BOT_USERNAME, OWNER_ID and any permitted AUTH_USERS in config.env. Add the bot to logging channels when using the optional log IDs.
 
-* BOT_TOKEN     - Get bot token from @BotFather
+3. Start with Docker Compose:
 
-* APP_ID        - From my.telegram.org (or @UseTGXBot)
+   ```bash
+   docker compose up --build -d
+   ```
 
-* API_HASH      - From my.telegram.org (or @UseTGXBot)
+## Commands
 
-* OWNER_ID      - Telegram ID of the owner
+- /start: Show the welcome message.
+- /help and /about: Show existing bot information.
+- Send a video file and press **DOWNLOAD and PROCESS**, then select an audio or subtitle stream.
+- /status: Owner-only transfer and system status.
+- /log: Owner-only log file.
+- /restart: Owner-only restart. Attempts a Git update first, if this is a clean Git checkout; update failures are logged and the current installed code is restarted.
 
-* AUTH_USERS    - Get from @MissRose_bot by /id command. Put id seperated by commas.
+Normal startup **does not automatically reset your code** from an upstream repository. WZGram and PyroFork should not be installed together.
 
-* LOG_CHANNEL   - Create a new channel and add the id of the channel. This channel will send the extracted subtitles or videos.
+## Configuration
 
-* LOG_MEDIA_CHANNEL   - Create a new channel and add the id of the channel. This channel for the source file. If this channel is not set LOG_CHANNEL will be used.
+| Name | Meaning |
+| --- | --- |
+| BOT_TOKEN | Telegram bot token |
+| APP_ID, API_HASH | Credentials from my.telegram.org |
+| BOT_USERNAME | Bot username without @ |
+| OWNER_ID | Telegram ID of owner |
+| AUTH_USERS | Comma-separated permitted user IDs |
+| LOG_CHANNEL | Optional extracted media log channel ID |
+| LOG_MEDIA_CHANNEL | Optional original video log channel; defaults to LOG_CHANNEL |
+| THRESHOLD | Free disk space reserved in GB (default 50) |
+| MAX_DOWNLOAD_LIMIT | Concurrent downloads allowed per user (default 10) |
+| UPSTREAM_REPO | Optional Git repository URL for /restart updates; defaults to this repository |
+| UPSTREAM_BRANCH | Optional Git branch for /restart updates; defaults to main |
 
-* BOT_USERNAME  - Username of the bot. Eg: @Extractorbot
+The bot cleans temporary downloads after processing or cancellation. Cancelled stream selections and failed extractions require the original video to be sent again.
 
-* UPSTREAM_REPO - Repo to update bot on restart.Default is this repo.
-
-* UPSTREAM_BRANCH - Repo branch for update. Default is master.
-
-
-
+Install without Docker using Python 3.10+ with `pip install -r requirements.txt`, and ensure FFmpeg and ffprobe are available in PATH.

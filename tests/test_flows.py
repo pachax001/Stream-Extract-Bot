@@ -26,6 +26,12 @@ class ConfigurationTests(unittest.TestCase):
             self.assertEqual(_get_env("THRESHOLD", cast=int, default="50"), 50)
             self.assertEqual(_get_env("MAX_DOWNLOAD_LIMIT", cast=int, default="10"), 10)
 
+    def test_all_plugins_import_under_wzgram(self):
+        import importlib
+        for name in ("plugins.start", "plugins.extractor", "plugins.callback"):
+            with self.subTest(module=name):
+                self.assertIsNotNone(importlib.import_module(name))
+
     def test_app_manifest_is_valid_json(self):
         data = json.loads(Path("app.json").read_text(encoding="utf-8"))
         self.assertIn("BOT_TOKEN", data["env"])

@@ -5,9 +5,9 @@ import asyncio
 from pathlib import Path
 from subprocess import CalledProcessError
 
-from pyrogram import Client, filters
-from pyrogram.enums import ParseMode
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
+from wzgram import Client, filters
+from wzgram.enums import ParseMode
+from wzgram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
 
 from config import Config
 from helpers.progress import download_progress, upload_progress

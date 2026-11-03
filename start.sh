@@ -1,1 +1,3 @@
-python3 update.py && python3 main.py
+#!/bin/sh
+set -e
+exec python3 main.py

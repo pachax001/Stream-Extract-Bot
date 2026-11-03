@@ -1,9 +1,9 @@
 import asyncio
 from typing import Any, Dict
 
-from pyrogram import Client, filters
-from pyrogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
-from pyrogram.errors import QueryIdInvalid, RPCError
+from wzgram import Client, filters
+from wzgram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from wzgram.errors import QueryIdInvalid, RPCError
 from config import Config
 from script import Script
 from helpers.tools import clean_up

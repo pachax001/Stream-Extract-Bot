@@ -1,6 +1,6 @@
 import asyncio
-from pyrogram import filters, Client
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from wzgram import filters, Client
+from wzgram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 
 from config import Config
 from script import Script

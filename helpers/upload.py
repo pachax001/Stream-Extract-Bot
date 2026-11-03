@@ -5,9 +5,9 @@ from typing import Any, Dict
 
 from hachoir.metadata import extractMetadata
 from hachoir.parser import createParser
-from pyrogram import Client
-from pyrogram.enums import ParseMode
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+from wzgram import Client
+from wzgram.enums import ParseMode
+from wzgram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 
 from config import Config
 from helpers.logger import logger

@@ -1,8 +1,8 @@
 from pathlib import Path
 from typing import Any, Dict, Callable
 
-from pyrogram import Client
-from pyrogram.types import Message
+from wzgram import Client
+from wzgram.types import Message
 
 from helpers.logger import logger
 from helpers.tools import execute, clean_up

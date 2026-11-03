@@ -3,8 +3,8 @@ import datetime
 from pathlib import Path
 
 import pytz
-from pyrogram import Client
-from pyrogram.errors import RPCError  # Import for specific Pyrogram errors
+from wzgram import Client
+from wzgram.errors import RPCError  # Import for specific Pyrogram errors
 from helpers.logger import logger
 from config import Config
 

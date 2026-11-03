@@ -1,7 +1,7 @@
 import time
 from typing import Any, Dict, Union
 
-from pyrogram.types import Message # For type hinting original_message
+from wzgram.types import Message # For type hinting original_message
 
 from helpers.logger import logger
 

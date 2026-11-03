@@ -4,10 +4,10 @@ import shutil
 from pathlib import Path
 from typing import Optional, Dict, Any
 
-from pyrogram import Client
-from pyrogram.enums import ParseMode
-from pyrogram.errors import MessageNotModified, UsernameNotOccupied
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
+from wzgram import Client
+from wzgram.enums import ParseMode
+from wzgram.errors import MessageNotModified, UsernameNotOccupied
+from wzgram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
 
 from config import Config
 from helpers.logger import logger

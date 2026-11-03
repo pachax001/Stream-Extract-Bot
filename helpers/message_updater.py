@@ -1,6 +1,6 @@
 import asyncio
-from pyrogram import Client
-from pyrogram.errors import MessageNotModified, FloodWait, MessageIdInvalid
+from wzgram import Client
+from wzgram.errors import MessageNotModified, FloodWait, MessageIdInvalid
 
 from helpers.logger import logger
 from utils.status_utils import get_status_text

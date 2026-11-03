@@ -1,105 +1,48 @@
+"""Safely update the deployed checkout when the owner invokes /restart."""
 import os
-import shutil
 import subprocess
 from pathlib import Path
 
 from dotenv import load_dotenv
 from helpers.logger import logger
 
-# Load environment variables
-env_path = Path("config.env")
-if env_path.exists():
-    load_dotenv(env_path, override=True)
-
-# Configuration
+load_dotenv("config.env", override=True)
 UPSTREAM_REPO = os.getenv(
-    "UPSTREAM_REPO",
-    "https://github.com/pachax001/Stream-Extract-Bot"
+    "UPSTREAM_REPO", "https://github.com/rumalg123/Stream-Extract-Bot.git"
 )
 UPSTREAM_BRANCH = os.getenv("UPSTREAM_BRANCH", "main")
 
-# File paths
-LOG_FILE = Path("log.txt")
-GIT_DIR = Path(".git")
-
-
-def clear_log_file() -> None:
-    """
-    Truncate the log file if it exists.
-    """
-    try:
-        if LOG_FILE.exists():
-            LOG_FILE.write_text("")
-            logger.info(f"Cleared log file: {LOG_FILE}")
-    except Exception as e:
-        logger.error(f"Failed to clear log file: {e}")
-
 
 def update_repository(repo: str, branch: str) -> bool:
-    """
-    Reinitialize git and reset to the specified upstream repository and branch.
-
-    Returns True on success, False on failure.
-    """
+    """Update a clean Git checkout, without recreating .git or changing Git globals."""
+    if not Path(".git").exists():
+        logger.warning("Not a Git checkout; leaving installed files unchanged.")
+        return False
     try:
-        # Remove existing git metadata
-        if GIT_DIR.exists():
-            shutil.rmtree(GIT_DIR)
-            logger.info("Removed existing .git directory.")
+        # Do not destroy tracked local modifications on a running deployment.
+        dirty = subprocess.run(
+            ["git", "status", "--porcelain", "--untracked-files=no"],
+            capture_output=True, text=True, check=True,
+        )
+        if dirty.stdout.strip():
+            logger.error("Working tree has local changes; skipping automatic update.")
+            return False
 
-        # Initialize new repo and configure
-        subprocess.run(["git", "init", "-q"], check=True)
         subprocess.run(
-            ["git", "config", "--global", "user.email", "pachax001@gmail.com"],
-            check=True
+            ["git", "fetch", "--no-tags", repo, f"refs/heads/{branch}"],
+            capture_output=True, text=True, check=True,
         )
         subprocess.run(
-            ["git", "config", "--global", "user.name", "pachax001"],
-            check=True
+            ["git", "reset", "--hard", "FETCH_HEAD"],
+            capture_output=True, text=True, check=True,
         )
-
-        # Commit current state
-        subprocess.run(["git", "add", "."], check=True)
-        subprocess.run(
-            ["git", "commit", "-sm", "update", "-q"],
-            check=True
-        )
-
-        # Link to upstream and hard reset
-        subprocess.run(
-            ["git", "remote", "add", "origin", repo],
-            check=True
-        )
-        subprocess.run(["git", "fetch", "origin", "-q"], check=True)
-        subprocess.run(
-            ["git", "reset", "--hard", f"origin/{branch}", "-q"],
-            check=True
-        )
+        logger.info("Updated checkout from %s branch %s", repo, branch)
         return True
-
-    except subprocess.CalledProcessError as e:
-        logger.error(f"Failed to update repository: {e}")
+    except (OSError, subprocess.CalledProcessError):
+        logger.exception("Could not update checkout from %s branch %s", repo, branch)
         return False
 
 
-def main() -> None:
-    """
-    Clear logs and perform the repository update.
-    """
-    clear_log_file()
-
-    if not UPSTREAM_REPO:
-        logger.error("UPSTREAM_REPO is not set; skipping update.")
-        return
-
-    success = update_repository(UPSTREAM_REPO, UPSTREAM_BRANCH)
-    if success:
-        logger.info("Successfully updated with latest commit from UPSTREAM_REPO")
-    else:
-        logger.error(
-            "Something went wrong while updating. Verify that UPSTREAM_REPO and UPSTREAM_BRANCH are correct."
-        )
-
-
 if __name__ == "__main__":
-    main()
+    if not update_repository(UPSTREAM_REPO, UPSTREAM_BRANCH):
+        raise SystemExit(1)

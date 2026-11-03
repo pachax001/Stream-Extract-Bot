@@ -1,6 +1,9 @@
+"""Update the owner's status message while transfers are active."""
 import asyncio
+
 from wzgram import Client
-from wzgram.errors import MessageNotModified, FloodWait, MessageIdInvalid
+from wzgram.enums import ParseMode
+from wzgram.errors import MessageNotModified, FloodWait, MessageIdInvalid, RPCError
 
 from helpers.logger import logger
 from utils.status_utils import get_status_text
@@ -12,55 +15,42 @@ def keep_updating_status(
     chat_id: int,
     message_id: int,
     stop_event: asyncio.Event | None = None,
-    interval: float = 10.0
+    interval: float = 10.0,
 ) -> asyncio.Task:
-    """
-    Start a background task that updates the given message every `interval` seconds
-    with the current status. If no transfers are active, the message is deleted
-    and the loop ends.
+    """Return an updater task that ends after transfers finish or status is removed."""
 
-    Returns an asyncio.Task which can be cancelled to stop updates early.
-    """
     async def _updater() -> None:
-        while True:
-            if not download_progress and not upload_progress:
-                await client.delete_messages(chat_id, message_id)
-                break
-
-            # External stop condition
-            if stop_event and stop_event.is_set():
-                break
-
-            # If no active transfers, delete message and exit
-            if not download_progress and not upload_progress:
+        try:
+            while not (stop_event and stop_event.is_set()):
+                if not download_progress and not upload_progress:
+                    try:
+                        await client.delete_messages(chat_id, message_id)
+                    except RPCError:
+                        logger.exception("Could not remove completed status message %s", message_id)
+                    break
                 try:
-                    await client.delete_messages(chat_id, message_id)
-                except (MessageIdInvalid, Exception):
+                    await client.edit_message_text(
+                        chat_id=chat_id,
+                        message_id=message_id,
+                        text=get_status_text(),
+                        parse_mode=ParseMode.MARKDOWN,
+                    )
+                except MessageNotModified:
                     pass
-                break
+                except FloodWait as exc:
+                    await asyncio.sleep(exc.value)
+                    continue
+                except MessageIdInvalid:
+                    break
+                except RPCError:
+                    logger.exception("Could not update status message %s", message_id)
+                    break
+                await asyncio.sleep(interval)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("Status updater stopped after unexpected error")
+        finally:
+            logger.debug("Status updater finished for message %s", message_id)
 
-            try:
-                new_text = get_status_text()
-                await client.edit_message_text(
-                    chat_id=chat_id,
-                    message_id=message_id,
-                    text=new_text
-                )
-            except MessageNotModified:
-                # no change in text
-                pass
-            except FloodWait as e:
-                await asyncio.sleep(e.value)
-            except (MessageIdInvalid, RuntimeError):
-                # message gone or invalid
-                break
-            except Exception as e:
-                logger.error("Error in status updater", exc_info=True)
-                break
-
-            await asyncio.sleep(interval)
-
-        logger.info("Status updater loop ended")
-
-    # Schedule the updater task
     return asyncio.create_task(_updater())

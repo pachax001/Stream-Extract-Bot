@@ -1,13 +1,14 @@
-import os
-import sys
-import shutil
+"""Bot commands for help, status, logs and owner-controlled restart."""
 import asyncio
+import os
+import shutil
+import sys
 from pathlib import Path
-from subprocess import CalledProcessError
 
-from pyrogram import Client, filters
-from pyrogram.enums import ParseMode
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
+from wzgram import Client, filters
+from wzgram.enums import ParseMode
+from wzgram.errors import RPCError
+from wzgram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
 
 from config import Config
 from helpers.progress import download_progress, upload_progress
@@ -15,159 +16,132 @@ from script import Script
 from helpers.logger import logger
 from utils.status_utils import get_status_text
 from helpers.message_updater import keep_updating_status
-from helpers.tools import clean_up
+from update import UPSTREAM_REPO
 
-# Paths
 DOWNLOADS_DIR = Path("downloads")
 RESTART_FILE = Path("restart_msg_id.txt")
 _last_status: dict[int, int] = {}
 
+
 @Client.on_message(filters.command("start") & filters.private)
 async def start_command(client: Client, message: Message) -> None:
-    """
-    Handle /start command: send welcome message with keyboard.
-    """
     await message.reply_text(
         text=Script.start_msg(message.from_user.mention),
         disable_web_page_preview=True,
         reply_markup=InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton("HELP", callback_data="help_data"),
-                InlineKeyboardButton("ABOUT", callback_data="about_data"),
-            ],
-            [InlineKeyboardButton("⭕️Owner⭕️", url=f"https://t.me/{Config.BOT_USERNAME}")]
-        ])
+            [InlineKeyboardButton("HELP", callback_data="help_data"),
+             InlineKeyboardButton("ABOUT", callback_data="about_data")],
+            [InlineKeyboardButton("⭕️Owner⭕️", url=f"https://t.me/{Config.BOT_USERNAME}")],
+        ]),
     )
 
 
 @Client.on_message(filters.command("help") & filters.private)
 async def help_command(client: Client, message: Message) -> None:
-    """
-    Handle /help command: send usage instructions.
-    """
     await message.reply_text(
         text=Script.help_msg(),
         disable_web_page_preview=True,
         reply_markup=InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton("BACK", callback_data="start_data"),
-                InlineKeyboardButton("ABOUT", callback_data="about_data"),
-            ],
-            [InlineKeyboardButton("⭕️SUPPORT⭕️", url=f"https://t.me/{Config.BOT_USERNAME}")]
-        ])
+            [InlineKeyboardButton("BACK", callback_data="start_data"),
+             InlineKeyboardButton("ABOUT", callback_data="about_data")],
+            [InlineKeyboardButton("⭕️SUPPORT⭕️", url=f"https://t.me/{Config.BOT_USERNAME}")],
+        ]),
     )
 
 
 @Client.on_message(filters.command("about") & filters.private)
 async def about_command(client: Client, message: Message) -> None:
-    """
-    Handle /about command: send bot details.
-    """
     await message.reply_text(
         text=Script.about_msg(),
         disable_web_page_preview=True,
         reply_markup=InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton("BACK", callback_data="help_data"),
-                InlineKeyboardButton("START", callback_data="start_data"),
-            ],
-            [
-                InlineKeyboardButton(
-                    "SOURCE CODE",
-                    url=Config.UPSTREAM_REPO if hasattr(Config, 'UPSTREAM_REPO') else "https://github.com/pachax001/Stream-Extract-Bot"
-                )
-            ]
-        ])
+            [InlineKeyboardButton("BACK", callback_data="help_data"),
+             InlineKeyboardButton("START", callback_data="start_data")],
+            [InlineKeyboardButton("SOURCE CODE", url=UPSTREAM_REPO)],
+        ]),
     )
 
 
 @Client.on_message(filters.command("log") & filters.private & filters.user(Config.OWNER_ID))
 async def send_log(client: Client, message: Message) -> None:
-    """
-    Handle /log command: send the log.txt file to owner.
-    """
     log_path = Path("log.txt")
-    if log_path.exists():
-        await client.send_document(
-            chat_id=message.chat.id,
-            document=str(log_path),
-            caption="Log file"
-        )
-    else:
+    if not log_path.is_file():
         await message.reply_text("No log file found.")
-
-
-async def _is_ffmpeg_running() -> bool:
-    """
-    Check if any ffmpeg process is active on the system.
-    """
+        return
     try:
-        proc = await asyncio.create_subprocess_exec(
-            "pgrep", "-f", "ffmpeg",
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.DEVNULL
+        await client.send_document(
+            chat_id=message.chat.id, document=str(log_path), caption="Log file"
         )
-        out, _ = await proc.communicate()
-        return bool(out.strip())
-    except CalledProcessError:
-        return False
+    except Exception:
+        logger.exception("Failed to send bot logs to owner")
+        await message.reply_text("Unable to send the log file.")
 
 
 @Client.on_message(filters.command("restart") & filters.private & filters.user(Config.OWNER_ID))
 async def restart_command(client: Client, message: Message) -> None:
-    """
-    Handle /restart: cleanup, update code, and restart the bot.
-    """
-    logger.info("Restarting the bot...")
-    resp = await message.reply_text("Restarting the bot...")
+    """Finish the update command before replacing this Python process."""
+    logger.info("Owner requested a restart")
+    reply = await message.reply_text("Restarting the bot...")
+    try:
+        RESTART_FILE.write_text(str(reply.id), encoding="utf-8")
+    except OSError:
+        logger.exception("Could not persist restart notification ID")
 
-    # Save message ID for post-restart edit
-    RESTART_FILE.write_text(str(resp.id))
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            sys.executable, "update.py",
+            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await proc.communicate()
+        if proc.returncode != 0:
+            logger.error(
+                "Repository update exited %s; restarting installed code. stdout=%s stderr=%s",
+                proc.returncode, stdout.decode(errors="replace"), stderr.decode(errors="replace")
+            )
+        else:
+            logger.info("Repository update finished before restart")
+    except Exception:
+        logger.exception("Could not execute repository update; restarting installed code")
 
-    # Cleanup downloads directory
-    if DOWNLOADS_DIR.exists():
-        shutil.rmtree(DOWNLOADS_DIR, ignore_errors=True)
+    # Do not kill every ffmpeg process on the host. Only restart this bot.
+    try:
+        if DOWNLOADS_DIR.exists():
+            shutil.rmtree(DOWNLOADS_DIR)
+    except OSError:
+        logger.exception("Unable to clear downloads during restart")
 
-    # Terminate ffmpeg if running
-    if await _is_ffmpeg_running():
-        await asyncio.create_subprocess_exec("pkill", "-9", "-f", "ffmpeg")
-
-    # Run update script
-    await asyncio.create_subprocess_exec("python3", "update.py")
-
-    # Restart process
-    os.execl(sys.executable, sys.executable, "main.py")
+    os.execv(sys.executable, [sys.executable, "main.py"])
 
 
 @Client.on_message(filters.command("status") & filters.private & filters.user(Config.OWNER_ID))
 async def status_command(client: Client, message: Message) -> None:
     user_id = message.from_user.id
-
-    # Delete old status message if we have one
     old_msg_id = _last_status.get(user_id)
     if old_msg_id:
         try:
             await client.delete_messages(chat_id=message.chat.id, message_ids=old_msg_id)
-        except:
-            pass
+        except RPCError:
+            logger.exception("Could not remove previous status message")
 
-    # Compose status
-    report = get_status_text(mount_point=str(Path.cwd()))
-    status_msg = await message.reply_text(report, parse_mode=ParseMode.MARKDOWN)
+    try:
+        report = get_status_text(mount_point=str(Path.cwd()))
+        status_msg = await message.reply_text(report, parse_mode=ParseMode.MARKDOWN)
+    except Exception:
+        logger.exception("Unable to send bot status report")
+        await message.reply_text("Unable to generate status report.")
+        return
 
-    # Remember it
     _last_status[user_id] = status_msg.id
-
-    # If no transfers at all, auto-delete after 5s
     if not download_progress and not upload_progress:
         await asyncio.sleep(5)
         try:
             await status_msg.delete()
-        except:
-            pass
-        # clear our record
-        _last_status.pop(user_id, None)
-        return
-
-    # Otherwise, spin up the periodic updater
-    keep_updating_status(client, status_msg.chat.id, status_msg.id)
+        except RPCError:
+            logger.exception("Could not delete idle status message")
+        finally:
+            if _last_status.get(user_id) == status_msg.id:
+                _last_status.pop(user_id, None)
+    else:
+        task = keep_updating_status(client, status_msg.chat.id, status_msg.id)
+        task.add_done_callback(lambda t: _last_status.pop(user_id, None)
+                               if _last_status.get(user_id) == status_msg.id else None)

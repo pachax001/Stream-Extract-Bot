@@ -28,7 +28,8 @@ RUN python3 -m venv /usr/src/app/venv
 COPY . .
 
 # Activate the virtual environment and install dependencies
-RUN /usr/src/app/venv/bin/pip install --no-cache-dir -r requirements.txt
+RUN /usr/src/app/venv/bin/pip install --no-cache-dir --upgrade pip \
+    && /usr/src/app/venv/bin/pip install --no-cache-dir -r requirements.txt
 
 # Make start.sh executable
 RUN chmod +x start.sh

@@ -1,51 +1,58 @@
 {
-    "name": "Streams Extractor Bot",
-    "description": "A bot to extract audio and subtitles from video files..",
-    "logo": "https://telegra.ph/file/71aaa621508cd696ab538.jpg",
-    "keywords": [
-        "Streams",
-        "Extractor",
-        "Telegram Bot",
-        "TroJanzHEX"
-    ],
-    "website": "https://TroJanzHEX.me",
-    "repository": "https://github.com/TroJanzHEX/Streams-Extractor",
-    "success_url": "https://telegram.dog/TroJanzHEX",
-    "env": {
-        "BOT_TOKEN": {
-            "description": "You Telegram Bot Token from @BotFather",
-            "value": ""
-        },
-        "API_HASH": {
-            "description": "Your API Hash from my.telegram.org or @UseTGXBot",
-            "value": ""
-        },
-        "APP_ID": {
-            "description": "Your APP ID from my.telegram.org or @UseTGXBot",
-            "value": ""
-        },
-        "AUTH_USERS": {
-            "description": "Id of users that can use the bot, from @MissRose_bot by /id command",
-            "value": ""
-        }
-        "LOG_CHANNEL": {
-            "description": "Id of Log channel to send extracted medias.",
-            "value": ""
-        }
+  "name": "Streams Extractor Bot",
+  "description": "Extract audio and subtitles from video files.",
+  "logo": "https://telegra.ph/file/71aaa621508cd696ab538.jpg",
+  "keywords": [
+    "Streams",
+    "Extractor",
+    "Telegram Bot"
+  ],
+  "website": "https://github.com/rumalg123/Stream-Extract-Bot",
+  "repository": "https://github.com/rumalg123/Stream-Extract-Bot",
+  "success_url": "https://github.com/rumalg123/Stream-Extract-Bot",
+  "env": {
+    "BOT_TOKEN": {
+      "description": "Telegram Bot Token from @BotFather",
+      "value": ""
     },
-    "addons": [],
-    "buildpacks": [
-        {
-            "url": "heroku/python"
-        },
-        {
-            "url": "https://github.com/jonathanong/heroku-buildpack-ffmpeg-latest"
-        }
-    ],
-    "formation": {
-        "worker": {
-            "quantity": 1,
-            "size": "free"
-        }
+    "API_HASH": {
+      "description": "Telegram API hash from my.telegram.org",
+      "value": ""
+    },
+    "APP_ID": {
+      "description": "Telegram API ID from my.telegram.org",
+      "value": ""
+    },
+    "OWNER_ID": {
+      "description": "Owner Telegram ID",
+      "value": ""
+    },
+    "BOT_USERNAME": {
+      "description": "Telegram bot username",
+      "value": ""
+    },
+    "AUTH_USERS": {
+      "description": "Comma-separated authorized user IDs",
+      "value": ""
+    },
+    "LOG_CHANNEL": {
+      "description": "Optional media log channel ID",
+      "value": ""
     }
+  },
+  "addons": [],
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    },
+    {
+      "url": "https://github.com/jonathanong/heroku-buildpack-ffmpeg-latest"
+    }
+  ],
+  "formation": {
+    "worker": {
+      "quantity": 1,
+      "size": "free"
+    }
+  }
 }

@@ -1,53 +1,57 @@
-# config.py
+"""Read and validate the existing bot environment variables."""
 import os
+from typing import Any
+
 from dotenv import load_dotenv
 from helpers.logger import logger
 
 load_dotenv("config.env")
 
+
 def _get_env(
-    name: str,
-    *,
-    default: str | None = None,
-    required: bool = False,
-    cast: type | None = None,
-) -> any:
-    """
-    Fetches and validates an environment variable.
-    - required: if True, raises ValueError when missing or blank
-    - cast: a type (e.g. int) to cast the value to
-    """
-    raw = os.getenv(name, default)
-    if required and (raw is None or raw.strip() == ""):
-        raise ValueError(f"Missing required environment variable: {name}")
-    if cast and raw not in (None, ""):
+    name: str, *, default: str | None = None,
+    required: bool = False, cast: type | None = None,
+) -> Any:
+    raw = os.getenv(name)
+    # Blank optional values in sample_config.env should use their defaults.
+    if raw is None or not raw.strip():
+        if required:
+            raise ValueError(f"Missing required environment variable: {name}")
+        raw = default
+    if cast is not None and raw is not None:
         try:
             return cast(raw)
-        except (TypeError, ValueError):
-            raise ValueError(f"Env var {name} must be of type {cast.__name__}")
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                f"Environment variable {name} must be a {cast.__name__}"
+            ) from exc
     return raw
 
+
 class Config:
-    MOUNT_POINT         = "/"
-    BOT_TOKEN           = _get_env("BOT_TOKEN", required=True)
-    APP_ID              = _get_env("APP_ID", required=True,  cast=int)
-    API_HASH            = _get_env("API_HASH", required=True)
-    BOT_USERNAME        = _get_env("BOT_USERNAME", required=True)
-    OWNER_ID            = _get_env("OWNER_ID", required=True,  cast=int)
+    MOUNT_POINT = "/"
+    BOT_TOKEN = _get_env("BOT_TOKEN", required=True)
+    APP_ID = _get_env("APP_ID", required=True, cast=int)
+    API_HASH = _get_env("API_HASH", required=True)
+    BOT_USERNAME = _get_env("BOT_USERNAME", required=True).lstrip("@")
+    OWNER_ID = _get_env("OWNER_ID", required=True, cast=int)
 
-    # Optional envs
-    AUTH_USERS          = {
-                           int(u) for u in _get_env("AUTH_USERS", default="").split(",") if u.strip()
-                         }
-    LOG_CHANNEL         = _get_env("LOG_CHANNEL")
-    LOG_MEDIA_CHANNEL   = _get_env("LOG_MEDIA_CHANNEL") or LOG_CHANNEL
+    AUTH_USERS = {
+        int(user.strip())
+        for user in (_get_env("AUTH_USERS", default="") or "").split(",")
+        if user.strip()
+    }
+    LOG_CHANNEL = _get_env("LOG_CHANNEL")
+    LOG_MEDIA_CHANNEL = _get_env("LOG_MEDIA_CHANNEL") or LOG_CHANNEL
 
-    THRESHOLD           = _get_env("THRESHOLD", cast=int, default="50")
-    MAX_DOWNLOAD_LIMIT  = _get_env("MAX_DOWNLOAD_LIMIT", cast=int, default="10")
+    THRESHOLD = _get_env("THRESHOLD", cast=int, default="50")
+    MAX_DOWNLOAD_LIMIT = _get_env("MAX_DOWNLOAD_LIMIT", cast=int, default="10")
+    if THRESHOLD < 0:
+        raise ValueError("THRESHOLD must be zero or greater")
+    if MAX_DOWNLOAD_LIMIT < 1:
+        raise ValueError("MAX_DOWNLOAD_LIMIT must be at least 1")
 
-    # Warnings for truly optional variables
     if not LOG_CHANNEL:
-        logger.info("LOG_CHANNEL is not set; media logs will not be sent.")
-    elif not os.getenv("LOG_MEDIA_CHANNEL"):
-        logger.info("LOG_MEDIA_CHANNEL is not set; using LOG_CHANNEL for media.")
-
+        logger.info("LOG_CHANNEL is not set; extracted file logging is disabled.")
+    elif not _get_env("LOG_MEDIA_CHANNEL"):
+        logger.info("LOG_MEDIA_CHANNEL is not set; source media uses LOG_CHANNEL.")

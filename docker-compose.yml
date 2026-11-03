@@ -3,3 +3,6 @@ services:
     build: .
     command: bash start.sh
     restart: on-failure
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro

@@ -1,105 +1,80 @@
+"""Update the running bot's Git checkout from the configured repo and branch.
+
+Used on initial startup and by the owner-only /restart command.
+"""
 import os
-import shutil
 import subprocess
 from pathlib import Path
 
 from dotenv import load_dotenv
 from helpers.logger import logger
 
-# Load environment variables
-env_path = Path("config.env")
-if env_path.exists():
-    load_dotenv(env_path, override=True)
+PROJECT_ROOT = Path(__file__).resolve().parent
+load_dotenv(PROJECT_ROOT / "config.env", override=True)
 
-# Configuration
-UPSTREAM_REPO = os.getenv(
-    "UPSTREAM_REPO",
-    "https://github.com/pachax001/Stream-Extract-Bot"
-)
-UPSTREAM_BRANCH = os.getenv("UPSTREAM_BRANCH", "main")
-
-# File paths
-LOG_FILE = Path("log.txt")
-GIT_DIR = Path(".git")
+UPSTREAM_REPO = (os.getenv("UPSTREAM_REPO") or "").strip() or "https://github.com/rumalg123/Stream-Extract-Bot.git"
+UPSTREAM_BRANCH = (os.getenv("UPSTREAM_BRANCH") or "").strip() or "main"
 
 
-def clear_log_file() -> None:
-    """
-    Truncate the log file if it exists.
-    """
-    try:
-        if LOG_FILE.exists():
-            LOG_FILE.write_text("")
-            logger.info(f"Cleared log file: {LOG_FILE}")
-    except Exception as e:
-        logger.error(f"Failed to clear log file: {e}")
+def _git(*args: str, timeout: int = 180) -> str:
+    """Run Git without a shell or interactive password prompts."""
+    env = os.environ.copy()
+    env["GIT_TERMINAL_PROMPT"] = "0"
+    result = subprocess.run(
+        ["git", *args],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+        check=True,
+        env=env,
+    )
+    return result.stdout.strip()
 
 
 def update_repository(repo: str, branch: str) -> bool:
+    """Update to exactly the configured ref, including tracked local modifications.
+
+    This intentionally replaces tracked files, like the former auto-updater,
+    but never deletes .git, changes global Git config, or removes untracked
+    config.env. Failure leaves the currently installed code available.
     """
-    Reinitialize git and reset to the specified upstream repository and branch.
-
-    Returns True on success, False on failure.
-    """
-    try:
-        # Remove existing git metadata
-        if GIT_DIR.exists():
-            shutil.rmtree(GIT_DIR)
-            logger.info("Removed existing .git directory.")
-
-        # Initialize new repo and configure
-        subprocess.run(["git", "init", "-q"], check=True)
-        subprocess.run(
-            ["git", "config", "--global", "user.email", "pachax001@gmail.com"],
-            check=True
-        )
-        subprocess.run(
-            ["git", "config", "--global", "user.name", "pachax001"],
-            check=True
-        )
-
-        # Commit current state
-        subprocess.run(["git", "add", "."], check=True)
-        subprocess.run(
-            ["git", "commit", "-sm", "update", "-q"],
-            check=True
-        )
-
-        # Link to upstream and hard reset
-        subprocess.run(
-            ["git", "remote", "add", "origin", repo],
-            check=True
-        )
-        subprocess.run(["git", "fetch", "origin", "-q"], check=True)
-        subprocess.run(
-            ["git", "reset", "--hard", f"origin/{branch}", "-q"],
-            check=True
-        )
-        return True
-
-    except subprocess.CalledProcessError as e:
-        logger.error(f"Failed to update repository: {e}")
+    if not (PROJECT_ROOT / ".git").exists():
+        logger.error("Automatic update skipped: %s is not a Git checkout", PROJECT_ROOT)
+        return False
+    if not repo.strip() or not branch.strip():
+        logger.error("Automatic update skipped: UPSTREAM_REPO/UPSTREAM_BRANCH is empty")
         return False
 
-
-def main() -> None:
-    """
-    Clear logs and perform the repository update.
-    """
-    clear_log_file()
-
-    if not UPSTREAM_REPO:
-        logger.error("UPSTREAM_REPO is not set; skipping update.")
-        return
-
-    success = update_repository(UPSTREAM_REPO, UPSTREAM_BRANCH)
-    if success:
-        logger.info("Successfully updated with latest commit from UPSTREAM_REPO")
-    else:
+    try:
+        _git("check-ref-format", "--branch", branch)
+        before = _git("rev-parse", "HEAD")
+        # Fetch only the selected branch from the explicitly configured repo.
+        _git("fetch", "--no-tags", repo, f"refs/heads/{branch}")
+        target = _git("rev-parse", "FETCH_HEAD")
+        _git("reset", "--hard", "FETCH_HEAD")
+        if before == target:
+            logger.info("Bot code already up to date: repo=%s branch=%s sha=%s", repo, branch, target[:12])
+        else:
+            logger.info(
+                "Bot code updated: repo=%s branch=%s previous=%s current=%s",
+                repo, branch, before[:12], target[:12],
+            )
+        return True
+    except subprocess.CalledProcessError as exc:
         logger.error(
-            "Something went wrong while updating. Verify that UPSTREAM_REPO and UPSTREAM_BRANCH are correct."
+            "Automatic Git update failed (repo=%s branch=%s command=%r exit=%s): %s",
+            repo, branch, exc.cmd, exc.returncode,
+            (exc.stderr or exc.stdout or str(exc)).strip(),
+            exc_info=True,
         )
+    except subprocess.TimeoutExpired:
+        logger.exception("Automatic Git update timed out (repo=%s branch=%s)", repo, branch)
+    except OSError:
+        logger.exception("Unable to run Git auto-update (repo=%s branch=%s)", repo, branch)
+    return False
 
 
 if __name__ == "__main__":
-    main()
+    if not update_repository(UPSTREAM_REPO, UPSTREAM_BRANCH):
+        raise SystemExit(1)

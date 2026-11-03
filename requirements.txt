@@ -1,8 +1,5 @@
-asyncio
-ffmpeg
+wzgram
 hachoir
-pyrofork==2.3.61
 python-dotenv
 pytz
-TgCrypto
 psutil

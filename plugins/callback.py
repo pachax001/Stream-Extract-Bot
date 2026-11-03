@@ -1,5 +1,6 @@
 """Inline button handlers for navigation, downloads and stream extraction."""
 import asyncio
+from pathlib import Path
 
 from wzgram import Client, filters
 from wzgram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
@@ -11,7 +12,7 @@ from helpers.tools import clean_up
 from helpers.download import download_file
 from helpers.ffmpeg import extract_audio, extract_subtitle
 from helpers.logger import logger
-from helpers.progress import download_progress, callback_progress
+from helpers.progress import stream_selections, callback_progress
 from update import UPSTREAM_REPO
 
 _active_extractions: set[str] = set()
@@ -158,19 +159,19 @@ async def handle_cancel_callback(client: Client, query: CallbackQuery) -> None:
             if key in _active_extractions:
                 await answer_query(query, "Extraction is already in progress.", True)
                 return
-            streams = download_progress.get(key)
+            streams = stream_selections.get(key)
             if not streams:
                 await answer_query(query, "Selection already cleared.", True)
                 return
             owner = next(iter(streams.values())).get("user_id")
             if not await _check_access(query, owner):
                 return
-            download_progress.pop(key, None)
+            stream_selections.pop(key, None)
             source = next(iter(streams.values())).get("file_path")
             if source:
                 await clean_up(source)
-                path = __import__("pathlib").Path(source)
-                if path.parent.parent == __import__("pathlib").Path("downloads"):
+                path = Path(source)
+                if path.parent.parent == (Path.cwd() / "downloads"):
                     await clean_up(path.parent)
             await _safe_edit(query, "Selection cancelled. Associated files cleared.")
         elif data == "cancel":
@@ -203,7 +204,7 @@ async def handle_extraction_callback(client: Client, query: CallbackQuery) -> No
     if key != expected:
         await answer_query(query, "This selection has expired.", True)
         return
-    streams = download_progress.get(key)
+    streams = stream_selections.get(key)
     entry = streams.get(index) if isinstance(streams, dict) else None
     if not isinstance(entry, dict):
         await answer_query(query, "Stream selection expired or was cancelled.", True)

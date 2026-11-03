@@ -8,7 +8,7 @@ from wzgram.types import Message
 from helpers.logger import logger
 from helpers.tools import execute, clean_up
 from helpers.upload import upload_audio, upload_subtitle
-from helpers.progress import download_progress
+from helpers.progress import stream_selections
 
 
 async def _extract_and_upload(
@@ -33,7 +33,7 @@ async def _extract_and_upload(
     source_path = Path(source_path_str)
     if not source_path.is_file():
         logger.error("Extraction source is missing: %s", source_path)
-        download_progress.pop(stream_info_key, None)
+        stream_selections.pop(stream_info_key, None)
         await _safe_edit(message, "❌ The source video is no longer available.")
         return False
 
@@ -94,9 +94,9 @@ async def _extract_and_upload(
     finally:
         # The selection message is consumed after one extraction; retaining files
         # on failure creates unreachable disk usage and exhausts the download disk.
-        download_progress.pop(stream_info_key, None)
+        stream_selections.pop(stream_info_key, None)
         await clean_up(output_path, source_path)
-        if source_path.parent.name == str(source_path.parent.name) and source_path.parent.parent.name == "downloads":
+        if source_path.parent.parent == (Path.cwd() / "downloads"):
             await clean_up(source_path.parent)
 
 

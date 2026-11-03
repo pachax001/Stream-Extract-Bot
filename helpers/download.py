@@ -12,7 +12,7 @@ from wzgram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
 
 from config import Config
 from helpers.logger import logger
-from helpers.progress import progress_func, download_progress, callback_progress, human_readable_bytes
+from helpers.progress import progress_func, download_progress, callback_progress, stream_selections, human_readable_bytes
 from helpers.tools import execute, clean_up
 
 MAX_DOWNLOADS_PER_USER = Config.MAX_DOWNLOAD_LIMIT
@@ -207,6 +207,7 @@ async def _probe_and_ask_streams(
             language = (stream.get("tags") or {}).get("language", "und")
             streams[str(idx)] = {
                 "map": idx,
+                "stream_type": kind,
                 "file_path": str(path),
                 "file_name": fname,
                 "source_file_display_name": fname,
@@ -225,7 +226,7 @@ async def _probe_and_ask_streams(
             return False
 
         buttons.append([InlineKeyboardButton("CANCEL", callback_data=f"cancel_{key}")])
-        download_progress[key] = streams
+        stream_selections[key] = streams
         await status_msg.edit_text(
             f"🔍 Select stream for <b>{html.escape(fname)}</b>:",
             reply_markup=InlineKeyboardMarkup(buttons),
@@ -233,7 +234,7 @@ async def _probe_and_ask_streams(
         )
         return True
     except Exception:
-        download_progress.pop(key, None)
+        stream_selections.pop(key, None)
         logger.exception("Could not probe video streams for %s", path)
         try:
             await status_msg.edit_text("❌ Could not retrieve stream information.")

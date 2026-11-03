@@ -9,6 +9,8 @@ from helpers.logger import logger
 download_progress: Dict[str, Dict[str, Any]] = {}
 upload_progress: Dict[str, Dict[str, Any]] = {} # Added for clarity, though it's the same structure
 callback_progress: Dict[str, Dict[str, Any]] = {}
+# Stream selections are idle user choices, not active download transfers.
+stream_selections: Dict[str, Dict[str, Any]] = {}
 
 
 def human_readable_bytes(size: float) -> str:
